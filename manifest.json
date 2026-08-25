@@ -1,6 +1,6 @@
 {
-  "name": "Local Restaurant Map",
-  "short_name": "Restaurants",
+  "name": "Plate Ledger",
+  "short_name": "Plate Ledger",
   "description": "Personal map and database of restaurants to try and places you've been.",
   "start_url": "./index.html",
   "scope": "./",

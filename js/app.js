@@ -1,4 +1,4 @@
-// Local Restaurant Map — Phase 0: bare map, no data yet.
+// Plate Ledger — Phase 0: bare map, no data yet.
 // Data model, storage, pins, search/filter, and Apple Maps handoff land in later phases.
 
 (function () {

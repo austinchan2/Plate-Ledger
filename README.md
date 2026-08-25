@@ -1,4 +1,4 @@
-# Local Restaurant Map
+# Plate Ledger
 
 A personal, single-user iPhone app for keeping your own private database of restaurants — ones you've heard about and want to try, and ones you've been to and reviewed. Search by town and filter by cuisine, rating, price, service style, and more. Tap a place to open directions in Apple Maps.
 

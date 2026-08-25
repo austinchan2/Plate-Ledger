@@ -1,4 +1,4 @@
-# Project Plan — Local Restaurant Map
+# Project Plan — Plate Ledger
 
 This is the build plan for the first working version (v1). It's written so that a new chat in this project can pick it up directly — start there by reading README.md, REQUIREMENTS.md, and this file.
 
@@ -64,7 +64,10 @@ This is the build plan for the first working version (v1). It's written so that 
 ## Phase 6 — Polish & real-world use
 
 - Confirm the "add a place in a few taps" non-functional goal (§11) actually feels fast in practice; trim friction if not.
-- App icon, splash/launch behavior, general mobile UI pass.
+- **Create a better app icon** — current icon is a placeholder; design a real one and regenerate `icons/apple-touch-icon.png`, `icons/icon-192.png`, `icons/icon-512.png`.
+- **Fix Home Screen naming** — confirm "Add to Home Screen" from iOS Safari picks up "Plate Ledger" automatically (manifest `name`/`short_name` + `apple-mobile-web-app-title` meta tag); adjust whichever isn't taking effect.
+- **General visual design pass — make it not look so ugly.** The app currently reads as a bare prototype; give it a real UI treatment (colors, typography, spacing, map pin/marker styling, detail card layout) so it feels like a finished app.
+- Splash/launch behavior, general mobile UI pass.
 - Manual test pass: add several real restaurants across multiple towns, exercise every filter, confirm export/import, confirm nothing is lost after a fresh deploy (this directly tests the §10a hard requirement).
 
 **Exit criteria:** Austin is comfortable using this as his actual restaurant list going forward.

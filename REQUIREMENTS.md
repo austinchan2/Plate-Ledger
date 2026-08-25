@@ -1,4 +1,4 @@
-# Local Restaurant Map — Requirements
+# Plate Ledger — Requirements
 
 ## 1. Overview
 
