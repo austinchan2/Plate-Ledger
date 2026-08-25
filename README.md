@@ -4,7 +4,7 @@ A personal, single-user iPhone app for keeping your own private database of rest
 
 ## Status
 
-**Planning complete, ready to build.** Requirements are finalized, the technical approach is chosen, and a phased project plan exists. Implementation hasn't started yet — start a new chat in this project to begin building.
+**Phase 0 (project scaffolding) built, awaiting Austin's test on his iPhone.** See PROGRESS.md for phase-by-phase status and what to test next.
 
 ## What this is
 
