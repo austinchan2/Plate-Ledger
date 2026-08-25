@@ -30,6 +30,41 @@ var PlateLedgerDB = (function () {
     "Bakery/Cafe", "Vegetarian/Vegan",
   ];
 
+  var CUSTOM_CUISINES_KEY = "plateLedgerCustomCuisines";
+
+  // Cuisine list is fixed-but-extensible (REQUIREMENTS.md §6.2): CUISINES
+  // above is the maintained baseline, and any cuisine typed into the form
+  // that isn't already in it gets appended here (localStorage, not
+  // IndexedDB -- it's a small flat list, not restaurant data) so it shows up
+  // in the picker from then on.
+  function getCuisineList() {
+    var custom = [];
+    try {
+      custom = JSON.parse(localStorage.getItem(CUSTOM_CUISINES_KEY) || "[]");
+    } catch (e) {
+      custom = [];
+    }
+    return CUISINES.concat(
+      custom.filter(function (c) {
+        return CUISINES.indexOf(c) === -1;
+      })
+    );
+  }
+
+  function addCustomCuisine(name) {
+    name = (name || "").trim();
+    if (!name || getCuisineList().indexOf(name) !== -1) return getCuisineList();
+    var custom = [];
+    try {
+      custom = JSON.parse(localStorage.getItem(CUSTOM_CUISINES_KEY) || "[]");
+    } catch (e) {
+      custom = [];
+    }
+    custom.push(name);
+    localStorage.setItem(CUSTOM_CUISINES_KEY, JSON.stringify(custom));
+    return getCuisineList();
+  }
+
   var dbPromise = null;
 
   function openDB() {
@@ -243,6 +278,8 @@ var PlateLedgerDB = (function () {
     DIETARY_TAGS: DIETARY_TAGS,
     NOISE_LEVELS: NOISE_LEVELS,
     CUISINES: CUISINES,
+    getCuisineList: getCuisineList,
+    addCustomCuisine: addCustomCuisine,
     addRestaurant: addRestaurant,
     getRestaurant: getRestaurant,
     getAllRestaurants: getAllRestaurants,

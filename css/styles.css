@@ -39,80 +39,372 @@ body {
   font-size: 10px;
 }
 
-/* --- Phase 1 temporary debug panel; remove with js/debug-panel.js in Phase 2 --- */
+/* --- Phase 2: top-level buttons (Add / List / Settings) ---------------- */
+/* Bare-functional styling for now — the real visual design pass is Phase 6
+   (PROJECT_PLAN.md), including fixing these controls sitting close to the
+   safe-area edge. */
 
-#debug-toggle {
+#add-fab-btn {
+  position: fixed;
+  right: calc(env(safe-area-inset-right) + 16px);
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
+  z-index: 1000;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #c0392b;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+#list-toggle-btn {
   position: fixed;
   top: calc(env(safe-area-inset-top) + 10px);
-  right: calc(env(safe-area-inset-right) + 10px);
+  left: calc(env(safe-area-inset-left) + 10px);
   z-index: 1000;
   padding: 8px 12px;
   border: none;
   border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #222;
+  font-size: 14px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+}
+
+#settings-toggle-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 10px);
+  right: calc(env(safe-area-inset-right) + 10px);
+  z-index: 1000;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #222;
+  font-size: 16px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* --- Phase 2: shared panel chrome (List panel, Settings panel, Form) ---- */
+
+.form-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 12px) 14px 12px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+
+.form-title {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.form-header-spacer {
+  width: 30px;
+}
+
+.form-close-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: #f2f2f2;
+  color: #444;
+  font-size: 15px;
+}
+
+.form-save-btn {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
   background: #c0392b;
   color: #fff;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
-#debug-panel {
+/* --- Phase 2: Add/Edit form ---------------------------------------------- */
+
+.form-overlay {
   position: fixed;
-  top: calc(env(safe-area-inset-top) + 50px);
-  left: calc(env(safe-area-inset-left) + 10px);
-  right: calc(env(safe-area-inset-right) + 10px);
-  bottom: calc(env(safe-area-inset-bottom) + 10px);
-  z-index: 999;
-  background: rgba(255, 255, 255, 0.97);
-  border-radius: 10px;
-  padding: 10px;
-  overflow-y: auto;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  font-size: 14px;
-}
-
-#debug-controls {
+  inset: 0;
+  z-index: 2000;
+  background: #fff;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
+  flex-direction: column;
 }
 
-#debug-controls button {
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #f2f2f2;
+.form-body {
+  flex: 1;
+  min-height: 0; /* flexbug #1: without this, a flex:1 child with overflow-y:auto
+     won't actually shrink to its container and scroll -- it grows to fit all
+     its content instead, pushing Save/Delete off the bottom of the screen. */
+  overflow-y: auto;
+  padding: 14px calc(env(safe-area-inset-left) + 14px) calc(env(safe-area-inset-bottom) + 30px) calc(env(safe-area-inset-right) + 14px);
+}
+
+.field-row {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
   font-size: 13px;
-}
-
-#debug-controls button.debug-danger {
-  background: #fdecea;
-  border-color: #c0392b;
-  color: #c0392b;
-}
-
-#debug-count {
-  color: #666;
+  font-weight: 600;
+  color: #555;
   margin-bottom: 6px;
 }
 
-.debug-row {
+.text-input,
+.textarea-input,
+.select-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #fff;
+}
+
+.textarea-input {
+  resize: vertical;
+}
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pill-btn {
+  padding: 8px 14px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  background: #f7f7f7;
+  color: #333;
+  font-size: 14px;
+}
+
+.pill-btn.pill-selected {
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+.status-btn {
+  flex: 1;
+  text-align: center;
+}
+
+.star-group {
+  display: flex;
+  gap: 4px;
+}
+
+.star-btn {
+  border: none;
+  background: none;
+  font-size: 28px;
+  line-height: 1;
+  color: #ccc;
+  padding: 0 2px;
+}
+
+.star-btn.star-filled {
+  color: #e6a817;
+}
+
+.checkbox-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.checkbox-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 0;
-  border-bottom: 1px solid #eee;
+  font-size: 14px;
 }
 
-.debug-row span {
+.add-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.add-row .text-input {
   flex: 1;
-  min-width: 0;
 }
 
-.debug-row button {
-  padding: 4px 8px;
-  font-size: 12px;
+.small-btn {
+  padding: 8px 12px;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 8px;
   background: #f2f2f2;
+  font-size: 14px;
   white-space: nowrap;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: #c0392b;
+  font-size: 14px;
+  text-decoration: underline;
+  padding: 6px 0;
+  display: block;
+}
+
+.address-body {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.address-confirmed {
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.address-town {
+  color: #777;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.search-results {
+  margin-top: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.search-result-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 6px;
+  border: none;
+  border-bottom: 1px solid #eee;
+  background: none;
+  font-size: 14px;
+}
+
+.search-status {
+  color: #777;
+  font-size: 13px;
+  padding: 6px 0;
+}
+
+.been-section {
+  border-top: 1px solid #eee;
+  padding-top: 14px;
+  margin-top: 4px;
+}
+
+.delete-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #c0392b;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #c0392b;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* --- Phase 2: interim restaurant list panel ------------------------------ */
+
+.list-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: #fff;
+  flex-direction: column;
+}
+
+.list-body {
+  flex: 1;
+  min-height: 0; /* see .form-body comment */
+  overflow-y: auto;
+  padding: 10px calc(env(safe-area-inset-left) + 14px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-right) + 14px);
+}
+
+.list-section-header {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #999;
+  margin: 16px 0 6px;
+}
+
+.list-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 6px;
+  border: none;
+  border-bottom: 1px solid #eee;
+  background: none;
+}
+
+.list-row-name {
+  font-size: 15px;
+  color: #222;
+}
+
+.list-row-meta {
+  font-size: 13px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.list-empty {
+  color: #888;
+  font-size: 14px;
+  padding: 20px 6px;
+  text-align: center;
+}
+
+/* --- Phase 2: Settings panel --------------------------------------------- */
+
+.settings-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  background: #fff;
+  flex-direction: column;
+}
+
+.settings-body {
+  padding: 16px calc(env(safe-area-inset-left) + 14px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-right) + 14px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-btn {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f7f7f7;
+  font-size: 15px;
+  text-align: left;
+}
+
+.settings-btn.settings-danger {
+  background: #fdecea;
+  border-color: #c0392b;
+  color: #c0392b;
 }

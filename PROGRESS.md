@@ -68,7 +68,7 @@ one.
 
 ## Phase 1 — Data model & storage layer
 
-**Status: Built. Awaiting your test on your iPhone.** (2026-08-25)
+**Status: Tested and confirmed working.** (2026-08-25)
 
 What's new:
 - `js/db.js` — the full restaurant record schema from REQUIREMENTS.md §6 (base
@@ -93,22 +93,123 @@ What's new:
 **Exit criteria (from PROJECT_PLAN.md):** can create/read/update/delete a
 restaurant record in storage, and export/import round-trips correctly.
 
-### Your turn: test on your iPhone
+### Testing notes
 
-This isn't deployed yet — I'll need you to push and let GitHub Pages rebuild
-(same as Phase 0), then:
+First round on-device surfaced a layout bug on the installed iOS PWA: the map
+didn't reach the bottom of the screen (blank strip below it) and the top —
+including the zoom controls and the Debug button — was pushed above the
+visible screen. Cause: iOS Safari doesn't fully honor `overflow: hidden` on
+`body` and can leave the page permanently scrolled a few pixels from its
+elastic "rubber-band" bounce. Fixed in `css/styles.css` by pinning `body` with
+`position: fixed; inset: 0;` so the document itself can't scroll at all.
+Re-tested after the fix: **all tests passed** — create/read/update/delete and
+the export → wipe → import round-trip all confirmed working on Austin's
+iPhone.
 
-1. Open the site fresh on your phone (or force-refresh if it was cached) and
-   confirm the map still loads.
-2. Tap **Debug** (top-right). Tap **"+ Add test restaurant"** a few times —
-   confirm rows appear with a name, status, town, and (for "Been" ones) a star
-   rating.
-3. Tap **"Toggle status"** on one — confirm its status flips.
-4. Tap **"Delete"** on one — confirm it disappears and the count updates.
-5. Tap **"Export JSON"** — confirm iOS offers to save/share a `.json` file.
-6. Tap **"Delete all"** (confirm the prompt) — confirm the list goes to 0.
-7. Tap **"Import JSON"** and pick the file you just exported — confirm your
-   restaurants come back.
+Known remaining issue (cosmetic, not blocking): some top controls can still
+sit close to / partly outside the visible area, with a fading/gradient
+artifact near the top of the installed app. Deferred — see "Follow-up
+requirements from testing" below and the Phase 6 visual-design-pass entry in
+PROJECT_PLAN.md; aesthetic work is being done last, once functionality is
+further along.
 
-Report "works" or what went wrong, and I'll fix/re-test or move on to Phase 2
-(the real Add/Edit form).
+### Follow-up requirements from testing (2026-08-25)
+
+Austin's Phase 1 test pass surfaced four items for later phases. All are now
+captured in PROJECT_PLAN.md / REQUIREMENTS.md so they aren't lost; none are
+being built yet:
+
+1. **Search-to-add, not just type-an-address.** The Phase 2 add-restaurant
+   flow should let Austin search for a restaurant by name and select it to
+   pull its location/address, rather than only typing a raw address to
+   geocode. Documented in PROJECT_PLAN.md Phase 2 and REQUIREMENTS.md §9.
+2. **"Recommended by" field.** Already exists in the §6.1 schema
+   (`recommendedBy` in `js/db.js`) — reconfirmed as wanted and flagged to make
+   sure the real Phase 2 form actually surfaces it prominently, not just
+   technically supports it.
+3. **Bury destructive/bulk actions in a Settings area.** "Delete all" (and
+   likely Export/Import) shouldn't be quick top-level buttons in the finished
+   app — they belong behind a Settings menu. The current top-level Debug panel
+   is temporary scaffolding only (removed in Phase 2) and isn't held to this;
+   documented as a real requirement for wherever Settings lands, in
+   REQUIREMENTS.md §10 and PROJECT_PLAN.md Phase 6.
+4. **Layout/aesthetic polish** (buttons still pushed toward/out of the visible
+   edge, top fading/gradient artifact) — explicitly deferred by Austin until
+   functional work is further along; folded into the existing Phase 6 visual
+   design pass in PROJECT_PLAN.md.
+
+## Phase 2 — Add / Edit restaurant flow
+
+**Status: Built, awaiting Austin's test.** (2026-08-25)
+
+What's new:
+- `js/geocode.js` — thin wrapper around OpenStreetMap's Nominatim search/geocode
+  endpoints (no API key needed).
+- `js/restaurant-form.js` — the real Add/Edit form, replacing the Phase 1
+  debug panel. Covers every field in REQUIREMENTS.md §6.1–6.4: Name,
+  **search-first address picker** (search by restaurant name → pick a result
+  to auto-fill address/lat-lng/town, with "enter address manually" as a
+  fallback that still geocodes the same way, per §9), **Recommended by** as
+  its own visible field (not buried, per the Phase 1 follow-up), Notes, a
+  Want to Go / Been status toggle that reveals the review fields only once
+  marked Been (rating, price range, non-chain, service style, cuisine
+  multi-select, meal(s) had, good date spot, last visited, would go again,
+  good for groups, outdoor seating, reservations, dietary tags, noise level,
+  website/menu link), and Delete with a confirmation prompt. Nothing touches
+  storage until Save or Delete is tapped — closing the form discards changes.
+- `js/db.js` — added `getCuisineList()` / `addCustomCuisine()` so the
+  "add a cuisine not listed" box in the form actually persists new cuisines
+  (in `localStorage`, not the restaurant records) and offers them again next
+  time, per §6.2's "extensible list" requirement.
+- `js/list-settings.js` — three small top-level controls since there's no map
+  pins or list view yet (that's Phase 3): a **+ button** (bottom-right) opens
+  the Add form; a **☰ List button** (top-left) opens a bare-bones list of
+  everything saved so far, grouped Want to Go / Been, tap a row to edit it —
+  this is deliberately plain and will be replaced by Phase 3's real map+list
+  view; a **⚙ Settings button** (top-right) opens Export / Import / Delete
+  all, per §10's requirement that these live in a Settings area rather than
+  as top-level buttons (the Phase 1 debug panel had them one tap away — this
+  fixes that for good, not just as a temporary stand-in).
+- The Phase 1 debug panel (`js/debug-panel.js`) is retired — moved to
+  `_to_delete/` since this session can't delete files directly on your Mac;
+  safe for you to delete that folder's contents in Finder whenever.
+- All styling here is intentionally plain/functional — the real visual design
+  pass is Phase 6 per PROJECT_PLAN.md, same as the top-bar layout issue noted
+  in Phase 1.
+
+**Exit criteria (from PROJECT_PLAN.md):** you can fully add a "Want to Go"
+place from your phone in well under a minute, and later fill in a full
+review when you've been.
+
+### Your turn: pull, test, and report back
+
+This was built and committed locally but **not pushed** — same as every
+phase so far, pushing is on you. From Terminal:
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+Then reload the app on your phone (close it fully from the app switcher and
+reopen from the Home Screen icon, since installed PWAs can cache the old
+version) and try:
+
+1. Tap **+**. Search for a real restaurant near you by name and pick it from
+   the results — confirm the address/town look right.
+2. Try the **"enter address manually"** fallback on a place search doesn't
+   find (or just to test it) — type an address and tap "Look up address."
+3. Fill in Name (if not already filled), **Recommended by**, and Notes, leave
+   status as "Want to Go," and Save. Confirm it took well under a minute.
+4. Tap **☰ List**, find that restaurant, tap it to reopen it in Edit mode.
+5. Switch its status to **Been** and confirm the full review section appears
+   — rating, price, cuisine (try adding a cuisine that's not in the list, like
+   a specific regional cuisine, and confirm it shows up as an option again
+   next time you open a Been restaurant), dietary tags, reservations, noise
+   level, etc. Save.
+6. Reopen it once more and confirm everything you entered is still there.
+7. Try **Delete** on a test entry — confirm it asks you to confirm first.
+8. Tap **⚙ Settings** — try Export (a JSON file should download/share), and
+   Import that same file back in (should say "Imported 1, skipped 0" or
+   similar, not duplicate everything if you still have the original).
+
+Report back "works" or what went wrong, and I'll fix and ask you to re-test
+before Phase 3 (map pins + list view) starts.

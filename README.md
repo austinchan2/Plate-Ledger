@@ -4,7 +4,7 @@ A personal, single-user iPhone app for keeping your own private database of rest
 
 ## Status
 
-**Phase 0 (project scaffolding) built, awaiting Austin's test on his iPhone.** See PROGRESS.md for phase-by-phase status and what to test next.
+**Phase 2 (Add/Edit restaurant flow) built, awaiting Austin's test on his iPhone.** Phases 0 and 1 are tested and confirmed working. See PROGRESS.md for phase-by-phase status and what to test next.
 
 ## What this is
 
