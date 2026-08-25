@@ -4,8 +4,20 @@ html, body {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background: #ffffff;
+}
+
+/* iOS Safari (including installed standalone PWAs) doesn't fully honor
+   overflow: hidden — it still allows elastic "rubber-band" scrolling/bounce,
+   which can leave the page permanently scrolled a few pixels and shift the
+   whole layout up, revealing blank space below and pushing content above the
+   notch. Pinning body to a fixed, full-viewport box makes the document itself
+   unscrollable so this can't happen. */
+body {
+  position: fixed;
+  inset: 0;
 }
 
 #map {
