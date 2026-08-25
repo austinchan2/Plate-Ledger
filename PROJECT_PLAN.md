@@ -29,8 +29,8 @@ This is the build plan for the first working version (v1). It's written so that 
 
 ## Phase 2 — Add / Edit restaurant flow
 
-- Add-restaurant form: name + address at minimum; geocode the address (e.g. via OpenStreetMap Nominatim) to get lat/lng and derive town/city.
-- Edit flow covering every field in §6.1–§6.4, including the confirmed dropdowns/tags: reservations (3-option), cuisine (multi-select from maintained list, extensible), dietary tags (multi-select), noise level, price range, rating, service style, non-chain flag, good-date-spot flag, would-go-again, good-for-groups, outdoor seating, website/menu link, notes.
+- **Add-restaurant form, search-first** (confirmed 2026-08-25, REQUIREMENTS.md §9): primary path is searching by restaurant name (e.g. via OpenStreetMap Nominatim's search endpoint) and selecting the correct result to auto-fill address, lat/lng, and town/city. Manual address entry stays as a fallback for places search doesn't find, geocoded the same way (e.g. via Nominatim) to get lat/lng and derive town/city.
+- Edit flow covering every field in §6.1–§6.4, including the confirmed dropdowns/tags: reservations (3-option), cuisine (multi-select from maintained list, extensible), dietary tags (multi-select), noise level, price range, rating, service style, non-chain flag, good-date-spot flag, would-go-again, good-for-groups, outdoor seating, website/menu link, notes. **"Recommended by" (§6.1) needs a clearly visible field of its own** — reconfirmed wanted by Austin during Phase 1 testing, don't let it get lost among the review fields.
 - Status toggle between "Want to Go" and "Been" (moving to "Been" is what unlocks the review fields).
 - Delete restaurant, with a confirmation step (this is a destructive action against the "never lose data" spirit of §10a, so it should require explicit confirmation).
 
@@ -66,7 +66,8 @@ This is the build plan for the first working version (v1). It's written so that 
 - Confirm the "add a place in a few taps" non-functional goal (§11) actually feels fast in practice; trim friction if not.
 - **Create a better app icon** — current icon is a placeholder; design a real one and regenerate `icons/apple-touch-icon.png`, `icons/icon-192.png`, `icons/icon-512.png`.
 - **Fix Home Screen naming** — confirm "Add to Home Screen" from iOS Safari picks up "Plate Ledger" automatically (manifest `name`/`short_name` + `apple-mobile-web-app-title` meta tag); adjust whichever isn't taking effect.
-- **General visual design pass — make it not look so ugly.** The app currently reads as a bare prototype; give it a real UI treatment (colors, typography, spacing, map pin/marker styling, detail card layout) so it feels like a finished app.
+- **General visual design pass — make it not look so ugly.** The app currently reads as a bare prototype; give it a real UI treatment (colors, typography, spacing, map pin/marker styling, detail card layout) so it feels like a finished app. Includes fixing the known top-bar layout issue from Phase 1 testing: controls sitting too close to / partly outside the visible safe area, plus a fading/gradient artifact near the top on the installed iOS PWA. Explicitly deferred to this phase per Austin (aesthetics last, once functionality is further along).
+- **Settings area** (confirmed 2026-08-25, REQUIREMENTS.md §10): a dedicated, out-of-the-way settings/menu screen to house Export, Import, and "Delete all" — these are destructive/bulk actions and should not be quick top-level buttons in the finished app (the Phase 1 debug panel exposes them at the top level, but that panel is temporary scaffolding, not the final design).
 - Splash/launch behavior, general mobile UI pass.
 - Manual test pass: add several real restaurants across multiple towns, exercise every filter, confirm export/import, confirm nothing is lost after a fresh deploy (this directly tests the §10a hard requirement).
 

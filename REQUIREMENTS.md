@@ -92,13 +92,15 @@ A restaurant can be visited more than once. The app does **not** keep a separate
 ## 9. Adding / Editing / Deleting
 
 - Add a restaurant with at minimum a name and address; address is geocoded automatically to place it on the map.
-- Edit any restaurant at any time — most commonly, moving a "Want to Go" entry to "Been" and filling in the review fields.
+- **Primary add path is search-to-select, not manual typing** (confirmed 2026-08-25): searching for a restaurant by name (e.g. via an OSM/Nominatim-style place search) and selecting the matching result should auto-fill its address and lat/lng. Manual address entry remains available as a fallback for places that don't turn up in search, and still gets geocoded the same way.
+- Edit any restaurant at any time — most commonly, moving a "Want to Go" entry to "Been" and filling in the review fields. This includes "Recommended by" (§6.1) — the real add/edit form must surface it prominently, not bury it.
 - Delete a restaurant.
 
 ## 10. Data Storage & Backup
 
 - Data lives locally on the one device (no server, no account) — consistent with the "single device is fine" decision.
 - Because local-only storage has no built-in safety net (clearing browser data, losing/replacing the phone would wipe it), the app **must** support exporting the full database to a file (e.g. JSON) and re-importing it. This is a required feature, not a nice-to-have, given the storage approach.
+- **UI placement (confirmed 2026-08-25):** Export, Import, and any bulk/destructive action (e.g. "delete all") must live in a Settings area, not as quick top-level buttons — this is a normal-use app going forward, not a debug tool, and these actions shouldn't be one accidental tap away.
 - **CloudKit considered and deferred to v2.** Storing data in iCloud via CloudKit JS was evaluated as a way to get automatic backup without manual export/import. It's not a lightweight add: it requires the same paid Apple Developer Program membership ($99/yr) already ruled out for MapKit JS (§ tech approach), plus setting up an iCloud container (normally done through an Xcode/native-app project), a "Sign in with Apple" auth flow inside the web app, manual index configuration in the CloudKit Dashboard, and running the app from a real server rather than a plain static file. That's a disproportionate amount of infrastructure for a single-user v1. **Decision: skip CloudKit for v1, keep local storage + export/import, and revisit automatic cloud backup as a v2 feature** — either CloudKit (if Austin ends up wanting a paid developer account anyway, e.g. for MapKit or a native app) or a lighter-weight free backend (e.g. Firebase/Supabase free tier) as a lower-friction alternative.
 
 ## 10a. Data Persistence Across App Versions (hard requirement)
@@ -133,5 +135,10 @@ All initial open questions were resolved on 2026-08-25:
 4. Photos are wanted, but lower priority — may ship as a fast-follow (v1.1) rather than blocking the first version.
 5. "Want to Go" vs. "Been" pin styling is left to design/implementation judgment, as long as they're visually distinct.
 6. CloudKit for automatic cloud backup was evaluated and deferred to v2 (see §10) — too much setup overhead (paid Apple Developer account, native-app-style container setup, auth flow) to justify for v1's single-device use case.
+
+Follow-up decisions from Phase 1 on-device testing (2026-08-25):
+
+7. Add-restaurant's primary path is search-and-select by name (see §9), not manual address entry — manual entry is a fallback.
+8. Export/Import and any bulk/destructive action (e.g. delete all) belong in a Settings area, not top-level buttons (see §10).
 
 No further open questions at this time; see PROJECT_PLAN.md for phased build order.
