@@ -45,6 +45,12 @@ Austin asked whether storing data in iCloud via CloudKit could remove the need f
 
 **Decision: deferred to v2.** v1 keeps local storage + export/import. If Austin later wants a developer account anyway (e.g. for MapKit or a native app), CloudKit becomes more attractive; otherwise a lighter free backend (Firebase/Supabase) is worth considering as a lower-friction alternative for automatic backup. See REQUIREMENTS.md §10 and PROJECT_PLAN.md's v2 backlog.
 
+## Addendum: native app without a paid developer account (evaluated 2026-08-27)
+
+Austin asked whether a native iOS app (Swift/Xcode) could be installed directly on his own phone without the $99/yr Apple Developer Program or the App Store, prompted by wanting to compare against the PWA's iOS Safari rendering quirks (see PROJECT_PLAN.md Phase 3). Findings: yes, this is possible with just a free Apple ID — Xcode can build and install an app straight to a connected iPhone over USB with no App Store involved. The catches: it requires a Mac (Xcode doesn't run on Windows/Linux), the app's provisioning certificate expires roughly every 7 days and the phone has to be reconnected to Xcode to reinstall it or the app stops launching, and a free account caps you at about 3 sideloaded apps on the device at once. Tools like SideStore can automate the weekly renewal without a computer, but that's a more involved setup on top of the base Xcode workflow.
+
+**Decision: not pursued for v1.** This doesn't remove the original reason MapKit/CloudKit were ruled out (see above) — those still need the paid account regardless of the sideloading question — and the free-account path trades PWA installation friction (none) for a recurring 7-day resign requirement, which is worse for a "just works" personal tool. Worth knowing about if Austin ever wants a real native rebuild (e.g. once a developer account is justified for other reasons, per the v2 backlog), but the PWA approach stands for now.
+
 ## Recommended Path Forward
 
 1. ~~Review REQUIREMENTS.md open questions~~ — done, see REQUIREMENTS.md §13.

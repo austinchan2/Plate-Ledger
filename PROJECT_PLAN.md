@@ -36,16 +36,44 @@ This is the build plan for the first working version (v1). It's written so that 
 
 **Exit criteria:** Austin can fully add a "Want to Go" place from his phone in well under a minute, and later fill in a full review when he's been.
 
-## Phase 3 — Map + list display
+## Phase 3 — Fix installed-PWA visual bugs (safe-area / viewport rendering)
 
-- Render pins for all stored restaurants (or the current filtered set, once Phase 4 lands).
+**Added 2026-08-27, pushing every phase after it back by one.** Originally
+these were going to wait for the Phase 7 (formerly Phase 6) polish pass, but
+Austin flagged that a recurring white strip across the bottom of the screen
+and a blurring/fading artifact near the top are frequent enough to make it
+hard to trust what's actually broken vs. a rendering glitch while testing
+Phase 2 and building later phases — so they get their own phase now instead.
+
+- Austin will open this phase with a screenshot showing both issues, to
+  properly diagnose them rather than guessing.
+- The top-side symptom is the same one flagged in Phase 1 testing (controls
+  sitting close to / partly outside the safe area, a fading/gradient artifact
+  near the top); the bottom white strip is new and not yet diagnosed.
+- Likely areas to investigate: iOS Safari's dynamic toolbar changing the
+  visual viewport height under `position: fixed` elements (Phase 1's
+  `body { position: fixed; inset: 0; }` fix may not cover every case —
+  possibly needs `100dvh`/`env(safe-area-inset-*)` handling in more places),
+  and how the Phase 2 UI (the List, Settings, and Add/Edit form panels, all
+  full-screen `position: fixed` overlays) interacts with that.
+- Confirm the fix holds across: cold launch from the Home Screen icon,
+  backgrounding and returning, opening/closing the List/Settings/Add-Edit
+  panels, and the on-screen keyboard appearing/disappearing (e.g. while
+  typing in the address search box).
+
+**Exit criteria:** no white strip at the bottom and no blur/fade artifact at
+the top on Austin's installed iPhone app, across the scenarios above.
+
+## Phase 4 — Map + list display
+
+- Render pins for all stored restaurants (or the current filtered set, once Phase 5 lands).
 - Visually distinguish "Want to Go" vs. "Been" pins (design judgment per §8/§13).
 - Tap a pin → detail card with all stored fields for that restaurant.
-- A complementary list view of the same filtered set (map-only browsing is awkward for dense areas; a list is often faster to scan).
+- A complementary list view of the same filtered set (map-only browsing is awkward for dense areas; a list is often faster to scan) — replaces the plain interim list built in Phase 2.
 
 **Exit criteria:** every saved restaurant is visible and tappable on the map and in a list.
 
-## Phase 4 — Search & filtering
+## Phase 5 — Search & filtering
 
 - Area search (by town/city derived from address).
 - Text search (name, notes).
@@ -54,20 +82,20 @@ This is the build plan for the first working version (v1). It's written so that 
 
 **Exit criteria:** the §7 worked example works end-to-end on-device.
 
-## Phase 5 — Apple Maps handoff
+## Phase 6 — Apple Maps handoff
 
 - "Directions" action on the detail card builds a `maps.apple.com` link from the restaurant's address/coordinates and opens it, handing off to the native Apple Maps app.
 - Confirm this actually opens the Apple Maps app (not just a web preview) when tapped from the installed Home Screen app on iOS Safari.
 
 **Exit criteria:** tapping "Directions" from the app opens turn-by-turn-ready directions in Apple Maps.
 
-## Phase 6 — Polish & real-world use
+## Phase 7 — Polish & real-world use
 
 - Confirm the "add a place in a few taps" non-functional goal (§11) actually feels fast in practice; trim friction if not.
 - **Create a better app icon** — current icon is a placeholder; design a real one and regenerate `icons/apple-touch-icon.png`, `icons/icon-192.png`, `icons/icon-512.png`.
 - **Fix Home Screen naming** — confirm "Add to Home Screen" from iOS Safari picks up "Plate Ledger" automatically (manifest `name`/`short_name` + `apple-mobile-web-app-title` meta tag); adjust whichever isn't taking effect.
-- **General visual design pass — make it not look so ugly.** The app currently reads as a bare prototype; give it a real UI treatment (colors, typography, spacing, map pin/marker styling, detail card layout) so it feels like a finished app. Includes fixing the known top-bar layout issue from Phase 1 testing: controls sitting too close to / partly outside the visible safe area, plus a fading/gradient artifact near the top on the installed iOS PWA. Explicitly deferred to this phase per Austin (aesthetics last, once functionality is further along).
-- **Settings area** (confirmed 2026-08-25, REQUIREMENTS.md §10): a dedicated, out-of-the-way settings/menu screen to house Export, Import, and "Delete all" — these are destructive/bulk actions and should not be quick top-level buttons in the finished app (the Phase 1 debug panel exposes them at the top level, but that panel is temporary scaffolding, not the final design).
+- **General visual design pass — make it not look so ugly.** The app currently reads as a bare prototype; give it a real UI treatment (colors, typography, spacing, map pin/marker styling, detail card layout) so it feels like a finished app. (The safe-area/viewport rendering bugs themselves are fixed in Phase 3, not here — this is the remaining color/typography/spacing polish.)
+- ~~**Settings area**~~ — **done in Phase 2:** Export, Import, and "Delete all" already live in a dedicated Settings panel, not top-level buttons (REQUIREMENTS.md §10).
 - Splash/launch behavior, general mobile UI pass.
 - Manual test pass: add several real restaurants across multiple towns, exercise every filter, confirm export/import, confirm nothing is lost after a fresh deploy (this directly tests the §10a hard requirement).
 
