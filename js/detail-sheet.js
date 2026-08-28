@@ -42,6 +42,25 @@ var PlateLedgerDetail = (function () {
     return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   }
 
+  // Builds a maps.apple.com "directions" link (Phase 6) — coordinates when
+  // we have them (the normal case, set at add-time via Nominatim), falling
+  // back to the stored address text otherwise. No dirflg is set, so Apple
+  // Maps opens with its own driving/walking/transit picker rather than us
+  // guessing. `q` labels the destination pin with the restaurant's name.
+  function buildDirectionsUrl(r) {
+    var daddr;
+    if (typeof r.lat === "number" && typeof r.lng === "number") {
+      daddr = r.lat + "," + r.lng;
+    } else if (r.address) {
+      daddr = r.address;
+    } else {
+      return null;
+    }
+    var params = ["daddr=" + encodeURIComponent(daddr)];
+    if (r.name) params.push("q=" + encodeURIComponent(r.name));
+    return "https://maps.apple.com/?" + params.join("&");
+  }
+
   // One "Label / value" row. Anything empty, null, or an empty array is
   // skipped entirely rather than rendered as a blank line — a detail card
   // full of empty labels is worse than a short one.
@@ -92,7 +111,19 @@ var PlateLedgerDetail = (function () {
       e.stopPropagation();
       PlateLedgerForm.openEdit(r);
     };
-    headEl.appendChild(el("div", { class: "detail-actions" }, [editBtn]));
+
+    // Directions comes first — it's the action Austin will tap most from
+    // here, so it gets top billing over Edit (Phase 6).
+    var actions = [];
+    var directionsUrl = buildDirectionsUrl(r);
+    if (directionsUrl) {
+      var dirBtn = el("a", { class: "detail-directions-btn", href: directionsUrl, text: "Directions" });
+      dirBtn.onclick = function (e) { e.stopPropagation(); };
+      actions.push(dirBtn);
+    }
+    actions.push(editBtn);
+
+    headEl.appendChild(el("div", { class: "detail-actions" }, actions));
   }
 
   function buildBody(r) {

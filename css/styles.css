@@ -663,6 +663,19 @@ body {
   font-weight: 600;
 }
 
+.detail-directions-btn {
+  padding: 9px 18px;
+  border: 1px solid #c0392b;
+  border-radius: 8px;
+  background: #c0392b;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  line-height: 1.2;
+}
+
 .detail-body {
   /* See the html/body touch-action note above: an ancestor's `none` has to
      be overridden with an explicit value for this to scroll natively. */
