@@ -224,3 +224,68 @@ message) and Austin didn't flag any issues with them.
 cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
 git push
 ```
+
+## Phase 3 — Fix installed-PWA visual bugs (safe-area / viewport rendering)
+
+Diagnosed from a screenshot Austin sent of the installed app: a solid white
+strip across the bottom of the screen, and a washed-out/faded band near the
+top (below the status bar).
+
+**Root cause (both symptoms, one cause):** `#map` had CSS padding equal to
+`env(safe-area-inset-*)` on all four sides, meant to keep the map content
+clear of the notch and home indicator. Instead it reserved a blank white
+rectangle there:
+- At the bottom, that white rectangle rendered as a plain solid bar (made
+  more obvious by Leaflet's attribution control, which also has a white
+  background, sitting right in it).
+- At the top, iOS's translucent status bar applies a live blur/vibrancy
+  effect to whatever is actually behind it — since that was blank white
+  padding instead of map tiles, the blur produced the washed-out fade
+  Austin saw, rather than the clean frosted-map-under-status-bar look native
+  map apps have.
+
+**Fix (`css/styles.css`, `js/app.js`):**
+- Removed the safe-area padding from `#map` entirely — the map now bleeds
+  edge-to-edge, under the notch/Dynamic Island and the home indicator, the
+  same way Apple/Google Maps do.
+- Added safe-area insets to Leaflet's own corner-control container
+  (`.leaflet-top` / `.leaflet-bottom` / `.leaflet-left` / `.leaflet-right`)
+  instead, so only the floating controls (zoom, attribution) stay clear of
+  the safe area — not the map tiles themselves.
+- Also moved the Leaflet zoom control from its default top-left position to
+  bottom-left. It was stacking directly underneath the **☰ List** button in
+  the same corner (visible in Austin's screenshot as a "+"/"-" control
+  half-hidden behind the List pill) — bottom-left was the one corner nothing
+  else uses (Settings is top-right, Add is bottom-right).
+
+**Exit criteria (from PROJECT_PLAN.md):** no white strip at the bottom and
+no blur/fade artifact at the top on Austin's installed iPhone app, across:
+cold launch from the Home Screen icon, backgrounding and returning,
+opening/closing the List/Settings/Add-Edit panels, and the on-screen
+keyboard appearing/disappearing.
+
+### Your turn
+
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+
+Then reinstall/relaunch the app from your Home Screen icon (force-quit it
+first if it was already open, so it picks up the new files) and check:
+
+- [ ] No solid white bar across the bottom of the screen — the map now runs
+      all the way to the true bottom edge, behind the home indicator.
+- [ ] No washed-out/faded band near the top — the map should run up under
+      the status bar/Dynamic Island with a normal frosted-glass look, not a
+      blank or hazy strip.
+- [ ] Zoom **+**/**-** buttons now show at the **bottom-left**, no longer
+      overlapping the **☰ List** button at top-left.
+- [ ] **☰ List** (top-left) and **⚙** Settings (top-right) buttons still sit
+      just clear of the notch/status bar, not touching it.
+- [ ] Attribution text ("Leaflet | © OpenStreetMap contributors", bottom
+      right) is still legible and not covered by the **+** Add button.
+- [ ] Repeat a quick check after: backgrounding and returning to the app,
+      opening then closing the List panel, opening then closing Settings,
+      and opening the Add form and tapping into the address search box
+      (keyboard up) then dismissing it.
