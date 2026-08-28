@@ -13,7 +13,10 @@ var PlateLedgerPins = (function () {
 
   var layer = null;
   var markersById = {};
-  var didInitialFit = false;
+  var userMarker = null;
+  var didFallbackFit = false;
+  var locateFailed = false;
+  var lastPoints = [];
 
   function map() {
     return window.PlateLedgerMap && window.PlateLedgerMap.map;
@@ -69,14 +72,16 @@ var PlateLedgerPins = (function () {
         points.push([r.lat, r.lng]);
       });
 
-      if (!didInitialFit && points.length) {
-        didInitialFit = true;
-        // Saved restaurants are a better opening view than "wherever the
-        // phone currently is" — tell app.js's geolocation callback to stand
-        // down if it hasn't fired yet.
-        window.PlateLedgerMap.suppressAutoCenter = true;
-        fitTo(points);
-      }
+      lastPoints = points;
+      // If geolocation already gave up before the pins finished loading,
+      // this render is the first moment the fallback fit has anything to
+      // fit to — hence the check here as well as in the event handler.
+      if (locateFailed) maybeFallbackFit();
+      // NOTE: no automatic fit-to-pins here. Geolocation wins the opening
+      // view (Austin's call, 2026-08-28) — with restaurants saved across
+      // many cities, fitting to all of them zooms out to something useless.
+      // fitToAll() below is only called as a fallback when we never get a
+      // location fix.
       return list;
     });
   }
@@ -89,12 +94,51 @@ var PlateLedgerPins = (function () {
       PlateLedgerDetail.open(r);
       return;
     }
+    // Stop a first geolocation fix arriving a moment later from dragging the
+    // view off the restaurant Austin just asked to see.
     window.PlateLedgerMap.suppressAutoCenter = true;
     // Nudge the centre up a little: the detail sheet covers the bottom of
     // the screen, so a pin at the true centre would sit behind it.
     m.setView([r.lat, r.lng], Math.max(m.getZoom(), 15), { animate: true });
     m.panBy([0, 90], { animate: true });
     PlateLedgerDetail.open(r);
+  }
+
+  // "You are here" dot. Deliberately not a teardrop pin — it has to read as
+  // "this is me", categorically different from a restaurant, at a glance.
+  // Same visual language as Apple/Google Maps: a blue dot with a white ring.
+  function renderUserDot(coords) {
+    var m = map();
+    if (!m) return;
+    var icon = L.divIcon({
+      className: "pl-userdot-icon",
+      html: '<div class="pl-userdot"></div>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+    });
+    if (userMarker) {
+      userMarker.setLatLng([coords.lat, coords.lng]);
+      return;
+    }
+    userMarker = L.marker([coords.lat, coords.lng], {
+      icon: icon,
+      // Keep it under the restaurant pins: it's orientation, not a target.
+      zIndexOffset: -1000,
+      interactive: false,
+    }).addTo(m);
+  }
+
+  // Fallback opening view for when geolocation never comes through (denied,
+  // unavailable, or timed out): frame the saved restaurants rather than
+  // leaving a zoomed-out map of the whole country.
+  function maybeFallbackFit() {
+    // Only give up on ever fitting once we've actually fitted something —
+    // otherwise a locatefailed that beats the first DB read (geolocation
+    // denied outright, or missing entirely) would consume the one chance
+    // and leave the map parked on the zoomed-out fallback view forever.
+    if (didFallbackFit || !lastPoints.length) return;
+    didFallbackFit = true;
+    fitTo(lastPoints);
   }
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -105,10 +149,23 @@ var PlateLedgerPins = (function () {
         PlateLedgerDetail.close();
       });
     }
+    // A fix that arrived before this module was listening still needs drawing.
+    if (window.PlateLedgerMap && window.PlateLedgerMap.userPosition) {
+      renderUserDot(window.PlateLedgerMap.userPosition);
+    }
   });
 
   window.addEventListener("plateledger:changed", function () {
     render();
+  });
+
+  window.addEventListener("plateledger:located", function (e) {
+    renderUserDot(e.detail);
+  });
+
+  window.addEventListener("plateledger:locatefailed", function () {
+    locateFailed = true;
+    maybeFallbackFit();
   });
 
   return { render: render, focus: focus };

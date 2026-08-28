@@ -69,13 +69,13 @@
 
   // Phase 4: everything else in the app (pins, detail sheet, list) needs the
   // one map instance, and needs a way to say "don't yank the view somewhere
-  // else". suppressAutoCenter is set by the pin layer when it fits the view
-  // to the saved restaurants, and by the list when it focuses one — either
-  // is a more useful opening view than raw geolocation, and geolocation
-  // resolving a second later shouldn't override it.
+  // else". suppressAutoCenter is set by the list when it focuses a specific
+  // restaurant — a late geolocation fix shouldn't drag the view off the pin
+  // the user just asked to see.
   window.PlateLedgerMap = {
     map: map,
     suppressAutoCenter: false,
+    userPosition: null, // {lat, lng, accuracy}, once we have a fix
   };
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -84,19 +84,49 @@
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
 
-  // Best-effort recenter on the user's current location. Silently falls back
-  // to the default view if permission is denied or geolocation is unavailable
-  // (e.g. first load over plain http on a local network).
+  // Opening view: **the user's current location wins** (Austin's call,
+  // 2026-08-28). He'll have restaurants saved all over the place, so an
+  // opening view fitted to every saved pin would zoom out to a useless
+  // continent-wide view; what he actually wants first is "what's near me."
+  // The pin layer only falls back to fitting the saved pins if we never get
+  // a fix (see the locatefailed event below).
+  //
+  // watchPosition rather than getCurrentPosition so the blue "you are here"
+  // dot keeps up as he moves. Only the FIRST fix recenters the map — after
+  // that, moving around shouldn't yank the view out from under him while
+  // he's panning.
+  var didInitialLocate = false;
+
+  function onLocated(pos) {
+    var coords = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: pos.coords.accuracy,
+    };
+    window.PlateLedgerMap.userPosition = coords;
+    window.dispatchEvent(new CustomEvent("plateledger:located", { detail: coords }));
+
+    if (didInitialLocate) return;
+    didInitialLocate = true;
+    if (window.PlateLedgerMap.suppressAutoCenter) return;
+    map.setView([coords.lat, coords.lng], LOCATED_ZOOM);
+  }
+
+  function onLocateFailed() {
+    // Permission denied, unavailable, or timed out. Tell the pin layer it can
+    // use its fallback (fit to saved restaurants) instead of leaving Austin
+    // staring at a zoomed-out map of the continental US.
+    if (didInitialLocate) return; // already had a fix; a later error is noise
+    window.dispatchEvent(new CustomEvent("plateledger:locatefailed"));
+  }
+
   if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      function (pos) {
-        if (window.PlateLedgerMap.suppressAutoCenter) return;
-        map.setView([pos.coords.latitude, pos.coords.longitude], LOCATED_ZOOM);
-      },
-      function () {
-        // permission denied / unavailable — keep fallback view
-      },
-      { timeout: 8000 }
-    );
+    navigator.geolocation.watchPosition(onLocated, onLocateFailed, {
+      timeout: 8000,
+      maximumAge: 30000,
+      enableHighAccuracy: false,
+    });
+  } else {
+    onLocateFailed();
   }
 })();

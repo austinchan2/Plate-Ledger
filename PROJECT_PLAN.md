@@ -73,11 +73,14 @@ the top on Austin's installed iPhone app, across the scenarios above.
 
 **Exit criteria:** every saved restaurant is visible and tappable on the map and in a list.
 
-**Status: built 2026-08-28 (build 6), pending on-device confirmation.** Pins
+**Status: DONE — confirmed by Austin on device 2026-08-28 (build 7).** Pins
 are rating-aware (filled + numbered for Been, hollow for Want to Go), the
 detail view is a bottom sheet over the map, and the Phase 2 interim list was
 upgraded in place — tapping a row now focuses the map and opens the sheet
-instead of jumping to the edit form. See PROGRESS.md's Phase 4 section.
+instead of jumping to the edit form. The opening view centres on the user's
+current location (with a blue "you are here" dot), falling back to framing
+the saved pins only if geolocation is denied or unavailable. See PROGRESS.md's
+Phase 4 section.
 
 ## Phase 5 — Search & filtering
 
@@ -86,7 +89,22 @@ instead of jumping to the edit form. See PROGRESS.md's Phase 4 section.
 - Filter controls for: status, cuisine (multi-select), minimum rating, price range, service style, non-chain flag, good-date-spot flag, and the other confirmed §6.3 fields — combinable with AND logic.
 - Validate the worked example from REQUIREMENTS.md §7: search a town, filter to Thai, see only "Been" entries with ratings.
 
-**Exit criteria:** the §7 worked example works end-to-end on-device.
+- **Proximity-ordered list (requested by Austin 2026-08-28, during Phase 4
+  review).** The list should be ordered by distance from wherever the map
+  currently is — pan to another city, open the list, and that city's places
+  come first, with everything else below. This replaces Phase 4's simple
+  Want-to-Go / Been alphabetical grouping. Two things to settle when building
+  it: whether the existing status grouping survives (proximity *within* each
+  group, or one flat proximity-ordered list with a status marker per row),
+  and whether to show the actual distance on each row. Sort against
+  `map.getCenter()` at the moment the list opens, not the user's GPS position
+  — the point is "what's near where I'm looking", which is not always where
+  he is. `PlateLedgerMap.userPosition` is available if a "distance from me"
+  variant is wanted too.
+
+**Exit criteria:** the §7 worked example works end-to-end on-device, and
+opening the list after panning to a new area surfaces that area's
+restaurants first.
 
 ## Phase 6 — Apple Maps handoff
 

@@ -609,6 +609,58 @@ on-device test below is for.
 
 **This is build 6.**
 
+### Build 7 — opening view flipped to geolocation, plus a "you are here" dot
+
+Austin's call after reviewing build 6, before testing it: **current location
+should win the opening view, not the saved pins.** His reasoning, which is
+worth keeping because it invalidates the build-6 assumption: he'll have
+restaurants saved all over the place, so fitting the opening view to all of
+them zooms out to a near-useless regional or continental view. What he
+actually wants on open is *what's near me*. He also asked for a pin showing
+his own current location.
+
+What changed:
+- `js/app.js` swapped `getCurrentPosition` for `watchPosition`, so the
+  location dot keeps up as he moves. **Only the first fix recenters the map**
+  — later fixes just move the dot, because yanking the view while he's
+  panning around would be maddening.
+- Each fix dispatches `plateledger:located` (and sets
+  `PlateLedgerMap.userPosition`); a failure before any fix dispatches
+  `plateledger:locatefailed`.
+- `js/map-pins.js` no longer fits to the saved pins on load. It draws a blue
+  "you are here" dot on `plateledger:located`, and **only** falls back to
+  fitting the saved pins if geolocation never comes through (denied,
+  unavailable, timed out) — otherwise Austin would be staring at the
+  zoomed-out fallback map of the continental US.
+- The location dot is deliberately not pin-shaped — a blue dot with a white
+  ring, same visual language as Apple/Google Maps — so it reads as "this is
+  me", categorically different from a restaurant, at a glance. It sits under
+  the restaurant pins (`zIndexOffset: -1000`) and isn't tappable: it's
+  orientation, not a target.
+- `suppressAutoCenter` survives but its job narrowed: it now only stops a
+  first location fix arriving a moment *after* a list-row tap from dragging
+  the view off the restaurant Austin just asked to see.
+
+**Bug caught by the headless test, worth remembering.** The first version of
+the fallback set its `didFallbackFit` guard as soon as `locatefailed` fired,
+whether or not it had actually fitted anything. When geolocation is missing
+or denied *outright*, that event fires synchronously during page setup —
+before the first IndexedDB read has returned any restaurants — so the guard
+was consumed against an empty list and the map stayed parked on the
+zoomed-out fallback view forever. Fixed by only setting the guard once
+something is actually fitted, and re-checking on each render. The 8-second
+*timeout* path always happened to fire after the pins had loaded, which is
+exactly why this would have been easy to miss on device: it only reproduces
+on an instant denial.
+
+Re-verified headless, both paths: with geolocation, the map centres on the
+reported position at zoom 13 with one location dot and no fit-to-pins; with
+geolocation removed entirely, no dot, and the map falls back to framing the
+saved restaurants. Zero errors either way. All build-6 behavior (pins, sheet,
+list, focus, delete) re-tested and still passing.
+
+**This is build 7 — that's what to check for on the build tag, not 6.**
+
 ### Your turn — push, then test on your phone
 
 ```
@@ -619,9 +671,10 @@ git push
 Then check, with at least two or three restaurants saved (one "Been" with a
 rating, one "Want to Go"):
 
-1. Build tag at the bottom reads **build 6**.
-2. On open, the map frames your saved restaurants rather than starting on
-   your current location.
+1. Build tag at the bottom reads **build 7**.
+2. On open, the map centres on **your current location** at street level, with
+   a blue dot showing where you are. (If you deny the location prompt, it
+   should instead frame your saved restaurants — that's the fallback.)
 3. Every saved restaurant has a pin, and each pin sits on the right spot.
 4. "Been" pins are solid red with the rating number in them; a 4- or 5-star
    one has a gold rim. "Want to Go" pins are hollow white with a red outline
@@ -640,3 +693,21 @@ rating, one "Want to Go"):
 11. Deleting a restaurant makes its pin and its card disappear.
 12. The bottom bar and top fade from Phase 3 are still gone (nothing here
     should have disturbed that, but worth a glance).
+
+### Phase 4 closed out (2026-08-28)
+
+Austin confirmed: **all tests pass.** Phase 4's exit criteria are met — every
+saved restaurant is visible and tappable on both the map and the list, Been
+and Want-to-Go pins are clearly distinct, and tapping a pin opens a detail
+card with all stored fields.
+
+Two things came out of his review, both handled:
+- Opening view flipped to geolocation + a current-location dot — built and
+  shipped in build 7 above, not deferred.
+- **Deferred to Phase 5:** the list should be ordered by proximity to
+  wherever the map currently is, so panning to another city and opening the
+  list surfaces that city's places first. Logged in PROJECT_PLAN.md's Phase 5
+  section — it belongs there rather than as a Phase 4 patch, since Phase 5
+  is already rebuilding how the list decides what to show.
+
+**Phase 4 is done.** Phase 5 (search & filtering) is next, in a new chat.
