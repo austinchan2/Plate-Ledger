@@ -22,7 +22,16 @@
         e.preventDefault();
       }
     },
-    { passive: false }
+    // capture: true — Leaflet's own controls (the zoom buttons in
+    // particular) call stopPropagation() on their own touch handling to
+    // keep taps on them from also reaching/dragging the map underneath.
+    // A bubble-phase listener on `document` never sees those events once
+    // stopped, which is exactly why the bottom bar was still reappearing
+    // after tapping a control even with this guard in place. Capture-phase
+    // listeners run on the way DOWN, before any descendant's
+    // stopPropagation() can block them, so this now sees every touch
+    // regardless of what Leaflet does with it afterward.
+    { passive: false, capture: true }
   );
 
   // Small unobtrusive build marker (js/version.js) so Austin can glance at

@@ -370,3 +370,49 @@ silently hide an update again.
 cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
 git push
 ```
+
+### Testing notes, round 2 (2026-08-28)
+
+Austin confirmed build 1 finally loaded (after clearing cached site data),
+and re-tested: **bottom bar still reappears after a tap or two, top fade
+still unchanged.**
+
+**Bottom bar — found a real bug in round 1's fix:** the document-level
+`touchmove` listener from the previous commit was attached to the bubble
+phase. Leaflet's own controls (the zoom +/- buttons especially) call
+`stopPropagation()` on their own touch handling so a tap on them doesn't
+also drag the map underneath — which also stops our bubble-phase listener
+on `document` from ever seeing those touches, since a stopped event never
+reaches an ancestor in the bubble phase. That's consistent with "a tap or
+two" — taps that happen to land on a control weren't being guarded at all.
+Fixed by switching the listener to the capture phase
+(`{ passive: false, capture: true }`), which runs on the way down before
+any descendant can call stopPropagation, so it now sees every touch
+regardless of what Leaflet does with it afterward.
+
+Also softened `html`, `body`, and `#map`'s fallback background from pure
+white to `#f2efe9` (a warm off-white close to OSM tiles' typical land
+color) as a defense-in-depth measure — if any sliver of this ever shows
+through at an edge for a reason CSS/JS genuinely can't prevent (a brief
+native bounce, a Leaflet tile-load timing gap), it should blend with the
+map instead of reading as an obvious white flash.
+
+**Top fade — still unresolved, likely not fixable in CSS.** This one is
+present even at rest (not tap-triggered like the bottom bar was), which
+points away from a rubber-band/reflow explanation and toward iOS itself
+compositing a translucent scrim over content that sits behind a
+`black-translucent` status bar in an installed web app — genuine OS
+behavior, not something in our page. Asked Austin whether to keep the
+current full-bleed-under-the-status-bar look (accepting whatever blend iOS
+applies there) or switch `apple-mobile-web-app-status-bar-style` to a
+solid bar instead (eliminates the blur entirely, but the map would then
+start just below a normal-looking status bar instead of running under it —
+trading full-bleed for a clean edge). Not changed pending his answer.
+
+**This is build 3.**
+
+**Not pushed yet** — same as every phase, pushing is on Austin:
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
