@@ -449,3 +449,43 @@ map starting right below it), no bar at the bottom on repeated taps.
 cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
 git push
 ```
+
+### Testing notes, round 3 (2026-08-28)
+
+Austin re-tested build 4: build tag confirmed showing correctly (cache-busting
+is working as intended), but **both bugs were still present** — bottom bar
+still reappearing, top fade unchanged despite the status-bar-style switch.
+
+**Bottom bar:** two different JS-level fixes now haven't worked (bubble-phase
+touchmove guard, then capture-phase). That consistent failure points away
+from anything interceptable via DOM events at all — most likely this is
+WKWebView's own native `UIScrollView` rubber-banding, a lower-level OS
+gesture-recognizer behavior that installed (standalone) iOS web apps are
+prone to, sitting below where `preventDefault()` on a DOM touchmove event is
+guaranteed to reach. Switched approach: added `touch-action: none` to
+`html, body` (a declarative signal to the OS gesture recognizer itself, not
+a reactive JS handler), with `touch-action: pan-y` explicitly re-enabled on
+the three panels that scroll natively (`.form-body`, `.list-body`,
+`.search-results` — an ancestor's `touch-action: none` restricts
+descendants even at their default `auto`, so those need an explicit
+override to keep working). This is a genuinely different mechanism than
+either JS attempt, not just a third guess at the same approach.
+
+**Top fade:** the status-bar-style meta tag change (`black-translucent` ->
+`default`) in build 4 may not have taken effect yet for a reason specific
+to how iOS installs home-screen web apps: several of the
+`apple-mobile-web-app-*` meta tags (status bar style, title, icons) are
+commonly understood to be read once, at "Add to Home Screen" time, and
+baked into that Home Screen icon — not re-read from the live page on every
+launch. If that's what's happening, no further code change will fix this;
+Austin needs to remove the existing Home Screen icon and re-add it via
+Share > Add to Home Screen so iOS picks up the new meta tag. Told him to
+try that before assuming the CSS/meta-tag change itself is wrong.
+
+**This is build 5.**
+
+**Not pushed yet** — same as every phase, pushing is on Austin:
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```

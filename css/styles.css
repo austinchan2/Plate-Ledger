@@ -5,6 +5,19 @@ html, body {
   width: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+  /* Two rounds of JS touchmove-preventDefault guards (see js/app.js) did
+     not stop the bottom bar from reappearing after a tap. That points to
+     the bounce being WKWebView's own native UIScrollView rubber-banding —
+     a lower-level, non-DOM gesture that installed (standalone) iOS web
+     apps are prone to, which JS preventDefault on touchmove isn't
+     guaranteed to reach. touch-action: none tells the OS gesture
+     recognizer itself not to treat this region as pannable at all, which
+     is a different (and for this specific bug, more likely effective)
+     mechanism than intercepting the DOM event. Panels that scroll
+     natively (.form-body, .list-body, .search-results) explicitly
+     re-enable pan-y below — auto is not enough to override an ancestor's
+     touch-action: none, it has to be an explicit value. */
+  touch-action: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   /* Matches OSM tiles' typical land color, not pure white. If any sliver of
      this ever shows through at an edge (e.g. during a brief native bounce
@@ -190,6 +203,7 @@ body {
 }
 
 .form-body {
+  touch-action: pan-y;
   flex: 1;
   min-height: 0; /* flexbug #1: without this, a flex:1 child with overflow-y:auto
      won't actually shrink to its container and scroll -- it grows to fit all
@@ -331,6 +345,7 @@ body {
 }
 
 .search-results {
+  touch-action: pan-y;
   margin-top: 8px;
   max-height: 220px;
   overflow-y: auto;
@@ -382,6 +397,7 @@ body {
 }
 
 .list-body {
+  touch-action: pan-y;
   flex: 1;
   min-height: 0; /* see .form-body comment */
   overflow-y: auto;
