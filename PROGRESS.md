@@ -289,3 +289,33 @@ first if it was already open, so it picks up the new files) and check:
       opening then closing the List panel, opening then closing Settings,
       and opening the Add form and tapping into the address search box
       (keyboard up) then dismissing it.
+
+### Testing notes, round 1 (2026-08-28)
+
+Austin tested the first Phase 3 commit on-device:
+
+- ✅ Zoom control now at bottom-left, no longer overlapping the List button.
+- ✅ List and Settings buttons still sit clear of the notch/status bar.
+- ✅ Attribution text still legible, not covered by the Add button.
+- ⚠️ **Bottom white bar: gone on cold launch, but reappears as soon as he
+  taps anywhere on screen.** Diagnosis: CSS alone (`overflow: hidden` +
+  `overscroll-behavior: none` + pinning `body` to a fixed full-viewport box)
+  isn't fully suppressing iOS's elastic "rubber-band" bounce on a tap in
+  this installed-PWA context — a single tap is enough to trigger a few
+  pixels of bounce, revealing blank space at the bottom edge before it
+  snaps back. Fixed by adding a document-level `touchmove` listener
+  (`js/app.js`) that calls `preventDefault()` on any touch that isn't
+  inside a panel meant to scroll natively (`.form-body`, `.list-body`,
+  `.search-results`), blocking the bounce without touching those panels'
+  own scrolling.
+- ⚠️ **Top hazy/fade band: still there, unchanged.** The first commit's
+  theory (blurred white safe-area padding) doesn't fully explain this,
+  since removing that padding didn't visibly change it. Not yet re-fixed —
+  waiting on a fresh screenshot from Austin of the current top-of-screen
+  state to diagnose further rather than guessing again.
+
+**Not pushed yet** — same as every phase, pushing is on Austin:
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
