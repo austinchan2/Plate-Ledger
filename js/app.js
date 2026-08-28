@@ -4,6 +4,27 @@
 (function () {
   "use strict";
 
+  // Phase 3: even with `overflow: hidden` + `overscroll-behavior: none` +
+  // pinning `body` to a fixed full-viewport box (see css/styles.css), this
+  // installed PWA still lets a single tap trigger a few pixels of iOS's
+  // elastic "rubber-band" bounce, which is enough to reveal blank space at
+  // an edge (reported as a bottom white bar reappearing on any tap) before
+  // it snaps back. CSS alone isn't stopping it here, so block the browser's
+  // native handling of any touchmove that starts outside a panel that's
+  // actually meant to scroll (Add/Edit form, List panel, and the address
+  // search results dropdown all use native `overflow-y: auto` scrolling and
+  // need their default touch behavior left alone).
+  var NATIVE_SCROLL_SELECTOR = ".form-body, .list-body, .search-results";
+  document.addEventListener(
+    "touchmove",
+    function (e) {
+      if (!e.target.closest(NATIVE_SCROLL_SELECTOR)) {
+        e.preventDefault();
+      }
+    },
+    { passive: false }
+  );
+
   // Fallback center: roughly the middle of the contiguous US, zoomed way out.
   // If geolocation succeeds, we recenter on the user instead.
   var FALLBACK_CENTER = [39.8283, -98.5795];
