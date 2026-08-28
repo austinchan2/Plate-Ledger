@@ -733,3 +733,85 @@ body {
 .list-row-thin {
   color: #aaa;
 }
+
+/* --- Phase 5: list search & filters ---------------------------------------- */
+
+.list-search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px calc(env(safe-area-inset-left) + 14px) 8px calc(env(safe-area-inset-right) + 14px);
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  flex: none;
+}
+
+.list-search-row .text-input {
+  flex: 1;
+}
+
+.filters-toggle-btn {
+  flex: none;
+  padding: 9px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f7f7f7;
+  color: #333;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.filters-toggle-btn.filters-toggle-active {
+  background: #c0392b;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+/* Collapsible, and independently scrollable with a max-height so a long
+   filter list (13 fields) can never push the results list off the bottom of
+   the screen on a small phone. */
+.filters-panel {
+  touch-action: pan-y;
+  flex: none;
+  max-height: 45vh;
+  overflow-y: auto;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+}
+
+.filters-body {
+  padding: 6px calc(env(safe-area-inset-left) + 14px) 10px calc(env(safe-area-inset-right) + 14px);
+}
+
+.filters-body .field-row {
+  margin-bottom: 14px;
+}
+
+/* --- Phase 5: flat proximity-ordered list rows ----------------------------- */
+
+.list-row-badge {
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.list-row-badge-been {
+  background: #c0392b;
+  color: #fff;
+}
+
+.list-row-badge-want {
+  background: #fff;
+  color: #c0392b;
+  border: 1.5px solid #c0392b;
+}
+
+.list-row-dist {
+  color: #555;
+  font-weight: 600;
+}

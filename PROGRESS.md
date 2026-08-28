@@ -711,3 +711,124 @@ Two things came out of his review, both handled:
   is already rebuilding how the list decides what to show.
 
 **Phase 4 is done.** Phase 5 (search & filtering) is next, in a new chat.
+
+## Phase 5 — Search & filtering
+
+### Build 8 — search box, combinable filters, and proximity-ordered list
+
+Search & filtering (REQUIREMENTS.md §7), plus the proximity-ordered list
+Austin asked for during the Phase 4 review.
+
+**Search.** One box at the top of the ☰ List panel, matching name, notes,
+town, and full address (case-insensitive substring). Typing a town name
+(the "area search" bullet in §7) and typing a dish/keyword (the "text
+search" bullet) both go through this one field rather than two separate
+controls — simpler to use, and the worked example in §7 doesn't actually
+need them kept apart.
+
+**Filters.** A "Filters" button next to the search box expands a collapsible
+panel (max 45vh tall, scrolls independently so it can never push the list
+off-screen) with every field REQUIREMENTS.md §7 calls for: status (All /
+Want to Go / Been), cuisine (multi-select, pulls from the same extensible
+list the Add/Edit form uses — including any custom cuisines Austin's
+added), minimum star rating (tap a star to set the floor), price range,
+service style, non-chain, good date spot, would go again, good for groups,
+outdoor seating, reservations, dietary-friendly tags, and noise level.
+"Clear filters" resets all of them in one tap (search text has its own
+native clear "x" and isn't touched by it).
+
+Filters combine with **AND logic across fields**, and **OR logic within a
+field that accepts multiple values** — e.g. picking "$" and "$$" shows
+either price, not neither; picking cuisine "Thai" and status "Been" shows
+only entries that are both. The "Filters" button itself shows a live count
+of how many filter dimensions are active (e.g. "Filters (2)"), so it's
+obvious at a glance whether the list is currently narrowed down.
+
+**Proximity-ordered list.** Replaces Phase 4's Want-to-Go/Been alphabetical
+grouping entirely. The list is now one flat set of rows, sorted by distance
+from wherever the map is centred **at the moment the list is opened**
+(`map.getCenter()`, not GPS position — Austin's framing: "what's near where
+I'm looking," which isn't always where he actually is). Each row now shows
+its actual distance (e.g. "0.4 mi", or "< 0.1 mi" once you're right on top
+of it) plus a small Been/Want-to-Go badge, since the old section headers
+that used to carry that information are gone. Records without coordinates
+(shouldn't normally happen — address is required and geocoded at add time)
+sort to the very end, alphabetically, rather than being dropped.
+
+**Riding along:** `js/app.js`'s touch-guard selector
+(`NATIVE_SCROLL_SELECTOR`) was missing `.detail-body` — a leftover from
+Phase 4 that meant the detail sheet's scrollable body was never actually
+exempted from the Phase 3 touchmove-preventDefault guard, the same class of
+bug Phase 3 fixed for the other panels. Added it, along with the new
+`.filters-panel`, so both scroll natively on-device instead of fighting the
+global bounce guard.
+
+**Tested headless in this session** (Node `vm` + a small hand-rolled DOM
+shim — no browser or npm registry access from this bridge, so jsdom/
+fake-indexeddb couldn't be installed; `PlateLedgerDB.getAllRestaurants` was
+stubbed with fixture data instead of touching real IndexedDB). Ten fixture
+restaurants across Denver/Boulder/Fort Collins/Aurora, two with no
+coordinates. Confirmed: default proximity order puts the closest restaurant
+first and no-coordinate records at the end, alphabetically; the exact §7
+worked example (search "Boulder", filter cuisine Thai, status Been) returns
+only the two matching Boulder "Been" Thai spots, closest first, both
+showing their star rating, with the filter badge reading "Filters (2)";
+minimum-rating, price-range (OR-within-field), and non-chain (tri-state)
+filters each isolate the right subset; Clear filters restores the full list
+and resets the badge; an unmatched search shows the empty-state message.
+27 assertions, all passing. Syntax-checked the on-device files directly
+with `node --check` as well.
+
+**Caveat that test can't cover:** the shim isn't a real browser, so actual
+touch/scroll behavior of the new `.filters-panel` and iOS's rendering of
+the search input, checkboxes, and pill buttons still need the on-device
+check below.
+
+**This is build 8.**
+
+### Your turn — push, then test on your phone
+
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+
+Then check, with at least five or six restaurants saved across a couple of
+different towns (mix of Want to Go / Been, ratings, cuisines, price
+ranges):
+
+1. Build tag at the bottom reads **build 8**.
+2. Open ☰ List: restaurants are no longer grouped into "Want to Go" /
+   "Been" sections — it's one list, nearest first, each row showing a
+   distance (e.g. "0.4 mi") and a small Been/Want-to-Go badge.
+3. Pan the map to a different area, then open the list — that area's
+   restaurants should now be first.
+4. Type a town name (or part of a restaurant's name, or a word from its
+   notes) into the search box at the top of the list — the list narrows
+   to matches as you type.
+5. Tap "Filters" — a panel expands below the search box with Status,
+   Cuisine, Minimum rating, Price range, Service style, Non-chain, Good
+   date spot, Would go again, Good for groups, Outdoor seating,
+   Reservations, Dietary-friendly, and Noise level.
+6. Try the worked example: search a town you have restaurants in, filter
+   Cuisine to one you've tagged, and set Status to "Been" — you should see
+   only that town's Been entries in that cuisine, with their ratings.
+7. Select two price ranges (e.g. $ and $$) — restaurants at either price
+   show up, not just one.
+8. The "Filters" button shows a count (e.g. "Filters (2)") whenever
+   anything's active, and goes back to plain "Filters" after tapping
+   "Clear filters" inside the panel.
+9. Everything from Phase 4 still works: tapping a row closes the list,
+   moves the map to that restaurant, and opens its detail card; pins,
+   the "you are here" dot, and opening-view geolocation are unchanged.
+10. Open a restaurant's detail card and drag it to the expanded view —
+    scrolling through its full field list should feel like normal native
+    scrolling (this is the `.detail-body` touch-guard fix riding along
+    in this build).
+
+### Open items still logged for later phases
+
+- Add-restaurant search quality (Nominatim not prioritizing actual
+  restaurant matches) — deferred since Phase 2, unchanged by this phase.
+  See PROJECT_PLAN.md's "Known issues carried forward."
+- Status bar color and the rest of the visual design pass — Phase 7.

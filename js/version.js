@@ -8,6 +8,6 @@
 // in project memory) — including this file's own first commit, which is
 // build 1.
 window.PLATE_LEDGER_BUILD = {
-  number: 7,
-  builtAt: "2026-08-27 08:12 PM MDT",
+  number: 8,
+  builtAt: "2026-08-28 09:49 AM MDT",
 };

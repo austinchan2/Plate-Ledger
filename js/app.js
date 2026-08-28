@@ -17,7 +17,8 @@
   // actually meant to scroll (Add/Edit form, List panel, and the address
   // search results dropdown all use native `overflow-y: auto` scrolling and
   // need their default touch behavior left alone).
-  var NATIVE_SCROLL_SELECTOR = ".form-body, .list-body, .search-results";
+  var NATIVE_SCROLL_SELECTOR =
+    ".form-body, .list-body, .search-results, .detail-body, .filters-panel";
   document.addEventListener(
     "touchmove",
     function (e) {
