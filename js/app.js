@@ -11,9 +11,15 @@
   var LOCATED_ZOOM = 13;
 
   var map = L.map("map", {
-    zoomControl: true,
+    // Default zoom control (top-left) collides with the List button, which
+    // lives in that same corner — move it to bottom-left instead, the one
+    // corner nothing else occupies (Settings is top-right, Add is
+    // bottom-right).
+    zoomControl: false,
     attributionControl: true,
   }).setView(FALLBACK_CENTER, FALLBACK_ZOOM);
+
+  L.control.zoom({ position: "bottomleft" }).addTo(map);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
