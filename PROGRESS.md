@@ -886,3 +886,22 @@ Then check:
   restaurant matches) — deferred since Phase 2, unchanged by this phase.
   See PROJECT_PLAN.md's "Known issues carried forward."
 - Status bar color and the rest of the visual design pass — Phase 7.
+
+### Phase 6 closed out (2026-08-28)
+
+Austin confirmed on device: Directions opens the native Apple Maps app with
+the destination set. Two notes from testing, both handled without reopening
+this phase:
+
+- The destination pin/label in Apple Maps shows Apple's own place name for
+  that location, not Plate Ledger's saved restaurant name. **Austin
+  confirmed this is fine as-is — no fix needed.**
+- Only manual address entry reliably works when adding a restaurant right
+  now — searching by name (e.g. "5 Star BBQ") doesn't always return a
+  result, and manually-entered addresses can geocode a couple of blocks off
+  from the actual location (test case: 430 W 800 N, Orem). Both are logged
+  as Phase 7 items, along with two new feature requests from this test
+  pass (a jump-to-current-location button, and a clear/"x" button on the
+  list search box) — see PROJECT_PLAN.md's Phase 7 section.
+
+**Phase 6 is done.** Phase 7 (polish) is next, in a new chat.

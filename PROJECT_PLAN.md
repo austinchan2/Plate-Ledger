@@ -124,6 +124,18 @@ shown, not grouped). See PROGRESS.md's Phase 5 section.
 
 **Exit criteria:** tapping "Directions" from the app opens turn-by-turn-ready directions in Apple Maps.
 
+**Status: DONE — confirmed by Austin on device 2026-08-28 (build 9).** The
+"Directions" button opens the native Apple Maps app with the destination
+already set, off either the restaurant's stored coordinates or (when those
+are missing) its address text. Two things Austin flagged during this test
+are captured as their own Phase 7 items below rather than reopening this
+phase: the destination pin/label in Apple Maps shows Apple's own place name
+for that location rather than Plate Ledger's saved restaurant name — Austin
+confirmed this is fine as-is, no fix needed — and address search at
+add-time is unreliable enough that only manual address entry reliably
+works, which surfaced the geocoding-accuracy bug below. See PROGRESS.md's
+Phase 6 section.
+
 ## Phase 7 — Polish & real-world use
 
 - Confirm the "add a place in a few taps" non-functional goal (§11) actually feels fast in practice; trim friction if not.
@@ -134,29 +146,58 @@ shown, not grouped). See PROGRESS.md's Phase 5 section.
 - ~~**Settings area**~~ — **done in Phase 2:** Export, Import, and "Delete all" already live in a dedicated Settings panel, not top-level buttons (REQUIREMENTS.md §10).
 - Splash/launch behavior, general mobile UI pass.
 - Manual test pass: add several real restaurants across multiple towns, exercise every filter, confirm export/import, confirm nothing is lost after a fresh deploy (this directly tests the §10a hard requirement).
+- **Jump-to-current-location button** (Austin, 2026-08-28, during Phase 6
+  testing). A button on the map that recenters/pans back to the user's
+  current GPS position on demand — distinct from the Phase 4 opening-view
+  auto-center, which only fires once on load. `PlateLedgerMap.userPosition`
+  already tracks the live `watchPosition` fix, so this is mostly a button
+  that calls `map.setView()` with it (plus a sensible fallback/disabled
+  state if geolocation was denied).
+- **Clear button on search** (Austin, 2026-08-28, during Phase 6 testing).
+  An "x in a circle" icon inside the Phase 5 list search box that clears
+  the query in one tap, rather than requiring backspace-to-empty.
+- **Fix add-restaurant search reliability** (Austin, 2026-08-28, during
+  Phase 6 testing — test case: searching "5 Star BBQ" didn't return a
+  result). This is the same root cause flagged during Phase 2 testing and
+  previously logged as an unscheduled known issue (see the old "Known
+  issues carried forward" notes folded in here): the Nominatim `/search`
+  call in `js/geocode.js` is unrestricted free-text and doesn't prioritize
+  actual restaurant/business matches, and isn't biased toward Austin's
+  location. Candidate fixes: `layer=poi` (or similar) to bias toward
+  points-of-interest over raw addresses/streets, and `viewbox` + `bounded=0`
+  to softly rank results near `map.getCenter()` /
+  `PlateLedgerMap.userPosition` higher without excluding results outside
+  it. Right now manual address entry is the only reliable way to add a
+  restaurant (confirmed by Austin, build 9 testing) — search should become
+  a real alternative once this lands.
+- **Fix geocoding accuracy for manually-entered addresses** (Austin,
+  2026-08-28, during Phase 6 testing — test case: "430 W 800 N, Orem"
+  geocoded a couple of blocks off from the actual location). Manual entry
+  still goes through `PlateLedgerGeocode.geocodeAddress()` (Nominatim) in
+  `js/restaurant-form.js`, so the pin drop error is a Nominatim geocoding
+  precision issue, not an app bug in how the address is stored/used —
+  investigate whether a more specific Nominatim query (e.g. structured
+  query params instead of a single free-text string, or `addressdetails=1`
+  to sanity-check what Nominatim actually resolved the string to before
+  accepting it) improves precision, especially for grid-style addressing
+  like Orem's ("800 N", "W 800 N" state-route numbering can be ambiguous
+  as free text). Since search-by-name is currently unreliable (see above),
+  this bug has outsized impact — it's hitting the primary path Austin
+  actually uses to add restaurants today.
 
 **Exit criteria:** Austin is comfortable using this as his actual restaurant list going forward.
 
-## Known issues carried forward (not yet scheduled)
+## Known issues carried forward (now scheduled — see Phase 7)
 
-Surfaced during Phase 2 on-device testing (2026-08-28), explicitly deferred
-by Austin to "a later stage" rather than picked now or forced into a
-specific phase number:
-
-- **Add-restaurant search doesn't prioritize actual restaurant/business
-  matches.** Typing a name returns what feels like near-random results from
-  anywhere in the world instead of putting matching businesses first. The
-  Nominatim `/search` call in `js/geocode.js` is unrestricted free-text —
-  try `layer=poi` (or similar) to bias toward points-of-interest over raw
-  addresses/streets.
-- **Search isn't biased toward Austin's location.** Should prefer nearby
-  matches. Nominatim's `/search` supports `viewbox` + `bounded=0` to softly
-  rank results inside a bounding box higher without excluding results
-  outside it. `js/app.js` already requests geolocation on load (and/or the
-  current map center, once Phase 4 lands pins) can seed that box.
-- Once search quality is fixed, the existing Name-autofill-from-search-result
-  behavior (`js/restaurant-form.js`) should start working reliably on its
-  own, since it depends on getting a well-matched result to autofill from.
+Surfaced during Phase 2 on-device testing (2026-08-28) and originally
+deferred by Austin to "a later stage" with no phase number attached. Austin
+hit the same problem again during Phase 6 testing (2026-08-28, build 9) and
+asked for it to be scheduled — it's now a Phase 7 item ("Fix add-restaurant
+search reliability", above), together with a related geocoding-accuracy bug
+found in the same test pass. Once search quality is fixed, the existing
+Name-autofill-from-search-result behavior (`js/restaurant-form.js`) should
+start working reliably on its own, since it depends on getting a
+well-matched result to autofill from.
 
 ## v1.1 (fast-follow, not blocking v1)
 
