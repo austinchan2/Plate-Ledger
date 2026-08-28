@@ -471,3 +471,246 @@ body {
   border-color: #c0392b;
   color: #c0392b;
 }
+
+/* --- Phase 4: map pins ---------------------------------------------------- */
+/* Classic teardrop: a square with three rounded corners, rotated -45deg so the
+   one square corner points down at the coordinate. The label is counter-rotated
+   +45deg so the rating number reads upright. `.pl-pin-icon` itself is
+   transparent — Leaflet's default divIcon styling would otherwise draw a white
+   box behind every pin. */
+
+.pl-pin-icon {
+  background: none;
+  border: none;
+}
+
+.pl-pin {
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.pl-pin span {
+  transform: rotate(45deg);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* "Been" — solid, with the rating printed in it. Filled + numbered is what
+   makes these readable as "visited, and here's the verdict" without a tap. */
+.pl-pin-been {
+  background: #c0392b;
+  border: 2px solid #fff;
+  color: #fff;
+}
+
+/* 4-5 stars get a gold rim so the best places stand out on a dense map. */
+.pl-pin-been.pl-pin-high {
+  border-color: #e6a817;
+}
+
+/* "Want to Go" — hollow, no number. Deliberately quieter than a Been pin:
+   these are the ones still to do, not the ones with a verdict attached. */
+.pl-pin-want {
+  background: #fff;
+  border: 3px solid #c0392b;
+  color: #c0392b;
+}
+
+/* --- Phase 4: detail bottom sheet ---------------------------------------- */
+/* --detail-base is the resting translateY for the current state; the drag
+   handler in js/detail-sheet.js writes `translateY(calc(var(--detail-base) +
+   Npx))` inline while a finger is down, so both live in the same coordinate
+   space and there's no jump when the drag ends and the class takes over. */
+
+.detail-sheet {
+  --detail-base: 100%;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 82vh;
+  z-index: 1400; /* above the map + FAB, below the list (1500) and form (2000) */
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -3px 18px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(var(--detail-base));
+  transition: transform 0.28s ease;
+  visibility: hidden;
+}
+
+.detail-sheet.detail-open {
+  visibility: visible;
+}
+
+/* Collapsed peek: enough for name, status, summary line, address and Edit. */
+.detail-sheet.detail-collapsed {
+  --detail-base: calc(82vh - 250px);
+}
+
+.detail-sheet.detail-expanded {
+  --detail-base: 0px;
+}
+
+.detail-grabber {
+  padding: 10px 0 4px;
+  display: flex;
+  justify-content: center;
+  flex: none;
+}
+
+.detail-grabber-bar {
+  width: 38px;
+  height: 5px;
+  border-radius: 3px;
+  background: #d6d6d6;
+}
+
+.detail-head {
+  flex: none;
+  padding: 4px 16px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.detail-name {
+  flex: 1;
+  font-size: 19px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.detail-badge {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.detail-badge-been {
+  background: #c0392b;
+  color: #fff;
+}
+
+.detail-badge-want {
+  background: #fff;
+  color: #c0392b;
+  border: 1.5px solid #c0392b;
+}
+
+.detail-summary {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #444;
+}
+
+.detail-address {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #888;
+}
+
+.detail-sheet .detail-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.detail-edit-btn {
+  padding: 9px 18px;
+  border: 1px solid #c0392b;
+  border-radius: 8px;
+  background: #fff;
+  color: #c0392b;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.detail-body {
+  /* See the html/body touch-action note above: an ancestor's `none` has to
+     be overridden with an explicit value for this to scroll natively. */
+  touch-action: pan-y;
+  flex: 1;
+  min-height: 0; /* see .form-body comment */
+  overflow-y: auto;
+  padding: 12px calc(env(safe-area-inset-left) + 16px)
+    calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-right) + 16px);
+}
+
+.detail-row {
+  display: flex;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.detail-row-label {
+  flex: none;
+  width: 40%;
+  font-size: 13px;
+  font-weight: 600;
+  color: #777;
+}
+
+.detail-row-value {
+  flex: 1;
+  font-size: 14px;
+  color: #222;
+  white-space: pre-wrap;
+}
+
+.detail-link {
+  display: inline-block;
+  margin-top: 14px;
+  color: #c0392b;
+  font-size: 14px;
+}
+
+.detail-empty {
+  padding: 18px 0;
+  color: #888;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* --- Phase 4: richer list rows ------------------------------------------- */
+
+.list-row-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.list-row-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.list-row-rating {
+  color: #e6a817;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.list-row-thin {
+  color: #aaa;
+}

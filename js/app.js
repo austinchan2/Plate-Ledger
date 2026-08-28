@@ -1,5 +1,8 @@
-// Plate Ledger — Phase 0: bare map, no data yet.
-// Data model, storage, pins, search/filter, and Apple Maps handoff land in later phases.
+// Plate Ledger — map bootstrap.
+// Owns the Leaflet map instance and the iOS touch guards. Pins, the detail
+// sheet, and the list all hang off window.PlateLedgerMap (set below) rather
+// than each creating their own map. Search/filter and Apple Maps handoff
+// land in later phases.
 
 (function () {
   "use strict";
@@ -64,6 +67,17 @@
 
   L.control.zoom({ position: "bottomleft" }).addTo(map);
 
+  // Phase 4: everything else in the app (pins, detail sheet, list) needs the
+  // one map instance, and needs a way to say "don't yank the view somewhere
+  // else". suppressAutoCenter is set by the pin layer when it fits the view
+  // to the saved restaurants, and by the list when it focuses one — either
+  // is a more useful opening view than raw geolocation, and geolocation
+  // resolving a second later shouldn't override it.
+  window.PlateLedgerMap = {
+    map: map,
+    suppressAutoCenter: false,
+  };
+
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
     attribution:
@@ -76,6 +90,7 @@
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(
       function (pos) {
+        if (window.PlateLedgerMap.suppressAutoCenter) return;
         map.setView([pos.coords.latitude, pos.coords.longitude], LOCATED_ZOOM);
       },
       function () {

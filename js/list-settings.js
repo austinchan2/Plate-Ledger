@@ -1,10 +1,12 @@
-// Plate Ledger — Phase 2: interim restaurant list + Settings panel + Add button.
-// The list here is intentionally plain (no map pins, no search/filter yet —
-// that's Phase 3/4): it exists so Austin can get back into a saved restaurant
-// to edit it or move it from "Want to Go" to "Been", now that the real
-// add/edit form (js/restaurant-form.js) has replaced the Phase 1 debug panel.
+// Plate Ledger — restaurant list + Settings panel + Add button.
+// Phase 4 retired the plain interim list this file started as: rows now carry
+// the same headline facts the map pins do (status, rating, price, cuisine,
+// town), and tapping one takes you to that restaurant *on the map* with its
+// detail sheet open, instead of dropping straight into the edit form. Editing
+// is still one tap away from there — it's just no longer the only thing a row
+// can do, which is what made the list feel like a debug screen.
 // Settings houses Export/Import/Delete all per REQUIREMENTS.md §10 — bulk and
-// destructive actions live behind this, not as top-level buttons. Phase 6
+// destructive actions live behind this, not as top-level buttons. Phase 7
 // gives all of this its real visual design pass; this is functional first.
 
 (function () {
@@ -41,20 +43,43 @@
   }
 
   function buildRow(r) {
-    var meta = statusLabel(r) + (r.town ? " · " + r.town : "");
-    if (r.status === PlateLedgerDB.STATUS.BEEN && r.rating) {
-      meta += " · " + "★".repeat(r.rating);
+    var been = r.status === PlateLedgerDB.STATUS.BEEN;
+
+    // Rating lives on its own line-leading element rather than in the meta
+    // string so it can be gold and sized independently — it's the field
+    // Austin is most likely to be scanning the list for.
+    var ratingEl = null;
+    if (been && r.rating) {
+      ratingEl = el("span", { class: "list-row-rating", text: "★".repeat(r.rating) });
     }
+
+    // Everything else that exists, in decreasing order of how likely it is
+    // to be the thing you're scanning for. Empty fields are skipped rather
+    // than rendered as stray separators.
+    var bits = [];
+    if (r.priceRange) bits.push(r.priceRange);
+    if (r.cuisines && r.cuisines.length) bits.push(r.cuisines.join(", "));
+    if (r.town) bits.push(r.town);
+    if (!been && r.recommendedBy) bits.push("rec. " + r.recommendedBy);
+
+    var meta = el("div", { class: "list-row-meta" });
+    if (ratingEl) meta.appendChild(ratingEl);
+    if (bits.length) {
+      meta.appendChild(el("span", { text: bits.join(" · ") }));
+    } else if (!ratingEl) {
+      meta.appendChild(el("span", { class: "list-row-thin", text: statusLabel(r) }));
+    }
+
     var row = el("button", { type: "button", class: "list-row" }, [
       el("div", { class: "list-row-name", text: r.name }),
-      el("div", { class: "list-row-meta", text: meta }),
+      meta,
     ]);
     row.onclick = function () {
-      // Deliberately leave the list panel open underneath (it's a lower
-      // z-index than the form overlay) so that when Save/Delete/Cancel
-      // closes the form, the list is still there -- refreshed with whatever
-      // changed -- instead of dropping the user back on the bare map.
-      PlateLedgerForm.openEdit(r);
+      // Close the list so the map is actually visible — the whole point of
+      // tapping a row now is to be shown where the place is. The detail
+      // sheet that opens has its own Edit button, so nothing is lost.
+      closeList();
+      PlateLedgerPins.focus(r);
     };
     return row;
   }
@@ -86,6 +111,9 @@
   }
 
   function openList() {
+    // The sheet is anchored to a pin the list is about to cover; leaving it
+    // open means closing the list drops you back on a stale card.
+    if (window.PlateLedgerDetail) PlateLedgerDetail.close();
     listOpen = true;
     listPanel.style.display = "flex";
     refreshList();

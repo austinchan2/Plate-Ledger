@@ -507,3 +507,136 @@ visual design pass, rather than re-opening Phase 3 for a cosmetic tweak.
 
 **Phase 3 is done.** Austin is starting Phase 4 (map + list display) in a
 new chat.
+
+---
+
+## Phase 4 — Map + list display
+
+**Goal (PROJECT_PLAN.md):** every saved restaurant visible and tappable on
+the map and in a list; Want-to-Go and Been pins visually distinct; tapping a
+pin opens a detail card with all stored fields; the plain interim Phase 2
+list gets retired.
+
+### Design decisions Austin made up front (2026-08-28)
+
+- **Pins: rating-aware.** A "Been" pin is a solid filled teardrop with its
+  star rating printed right in it; a "Want to Go" pin is a hollow outlined
+  teardrop with no number. Rejected the simpler colour-only option — a
+  number in the pin means the map itself carries the verdict, so scanning
+  for "where are the good ones" doesn't require tapping anything.
+- **Detail view: bottom sheet**, not a full-screen overlay. Slides up over
+  the map, map stays visible above it. Same pattern Apple/Google Maps use,
+  which matters because the reason you tap a pin is usually "what is this
+  one, and what's near it" — a full-screen view throws away the second half
+  of that question.
+- **List: upgrade the existing panel** rather than a half-sheet or a
+  Map/List toggle. Keeps the ☰ List button and full-height panel, but the
+  rows get real content and a row tap now means "show me this on the map."
+
+### What was built
+
+**`js/map-pins.js` (new)** — the pin layer.
+- Renders every restaurant with a lat/lng as a Leaflet `divIcon` marker in a
+  single `L.layerGroup`, re-rendered wholesale on every `plateledger:changed`
+  event (add, edit, delete, import) so the map can never drift from storage.
+- Pin geometry note worth keeping: the pin is a 30×30 box rotated -45°, which
+  puts its sharp corner ~6px *below* that box. So `iconSize` is [30, 40] and
+  `iconAnchor` is [15, 36], not the naive [15, 30] — get this wrong and every
+  pin sits visibly off its actual coordinates.
+- A "Been" entry with no rating yet shows a bullet rather than an empty pin.
+  Ratings of 4-5 get a gold rim on top of the filled red, so the best places
+  separate from the merely-visited on a dense map.
+- `focus(r)` centres the map on one restaurant and opens its sheet — this is
+  what a list row tap calls. It pans up ~90px afterward, because a pin at the
+  true centre would sit behind the sheet.
+- **Initial view:** if any restaurants are saved, the map fits to their
+  bounds on load instead of using geolocation. Geolocation resolving a second
+  later would otherwise yank the view away from the pins you just fitted to,
+  so the pin layer sets `PlateLedgerMap.suppressAutoCenter` and app.js's
+  geolocation callback checks it.
+
+**`js/detail-sheet.js` (new)** — the bottom sheet.
+- Collapsed peek (~250px) shows name, status badge, a summary line of
+  rating · price · cuisine · town, the address, and an Edit button. Expanded
+  shows every stored field.
+- Empty/null/`[]` fields are skipped entirely rather than rendered as blank
+  rows. The schema's booleans are tri-state (`true` / `false` / `null` = never
+  answered), so only the answered ones render — `null` is not "No".
+- Drag to expand/collapse/dismiss, plus plain tap-to-toggle on the grabber
+  and header (drag is nice, tap is the discoverable version). Written with raw
+  touch events on purpose: the Phase 3 `touch-action: none` fix means there's
+  no native drag behavior here to lean on.
+- Stays honest after an edit/delete/import — on `plateledger:changed` it
+  re-reads its record and either refreshes or closes if the record is gone.
+
+**`js/list-settings.js` (rewritten rows)** — the interim list is retired.
+- Rows now carry the same headline facts the pins do: name, gold star rating,
+  price, cuisines, town, and "rec. <name>" for Want-to-Go entries. Empty
+  fields are skipped instead of leaving stray separators.
+- **Tapping a row no longer jumps straight into the edit form.** It closes
+  the list, flies the map to that pin, and opens the detail sheet — Edit is
+  one more tap from there. That's what made the old list feel like a debug
+  screen: editing was the only thing a row could do.
+- Opening the list closes any open sheet, so closing the list doesn't drop
+  you back onto a stale card anchored to a pin you can no longer see.
+
+**`js/app.js`** — now publishes `window.PlateLedgerMap = { map, suppressAutoCenter }`
+so pins/sheet/list all share the one map instance instead of each making
+their own.
+
+**`css/styles.css`** — pin shapes, sheet (including the `--detail-base`
+custom property the drag handler and the collapsed/expanded classes share, so
+there's no jump when a drag ends and the class takes over), and richer list
+rows.
+
+### Verification done before handing this over
+
+Ran the whole app headless in this session (Chromium/Playwright) against a
+minimal Leaflet stand-in — this container has no network egress, so the real
+CDN Leaflet can't be fetched here. Seeded three restaurants through the app's
+own DB layer and confirmed: three pins with the right classes and labels
+(`5` gold-rimmed, `3` plain, Want-to-Go hollow and blank); pin tap opens the
+sheet with the correct name, badge, summary and all 14 detail rows; grabber
+tap expands it; list rows render with rating/price/cuisine/town; opening the
+list closes the sheet; a row tap closes the list, recentres the map on that
+record's coordinates and opens its sheet; and deleting the focused record
+closes the open sheet and drops its pin. Zero page errors or console errors
+throughout.
+
+Caveat that stub can't cover: real Leaflet tile rendering and actual on-map
+pin *positioning* (the stub doesn't position markers). That's what the
+on-device test below is for.
+
+**This is build 6.**
+
+### Your turn — push, then test on your phone
+
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+
+Then check, with at least two or three restaurants saved (one "Been" with a
+rating, one "Want to Go"):
+
+1. Build tag at the bottom reads **build 6**.
+2. On open, the map frames your saved restaurants rather than starting on
+   your current location.
+3. Every saved restaurant has a pin, and each pin sits on the right spot.
+4. "Been" pins are solid red with the rating number in them; a 4- or 5-star
+   one has a gold rim. "Want to Go" pins are hollow white with a red outline
+   and no number.
+5. Tapping a pin slides up a card with the name, a Been / Want to Go badge,
+   the rating/price/cuisine/town line, the address, and an Edit button.
+6. Dragging that card up (or tapping its grabber bar) expands it to show
+   every field you filled in — and only the ones you filled in.
+7. Dragging it down collapses it; dragging down again dismisses it. Tapping
+   the map also dismisses it.
+8. Edit from the card opens the normal edit form; saving a change updates the
+   card underneath without you reopening it.
+9. ☰ List rows show the star rating, price, cuisine and town.
+10. Tapping a list row closes the list, moves the map to that restaurant, and
+    opens its card.
+11. Deleting a restaurant makes its pin and its card disappear.
+12. The bottom bar and top fade from Phase 3 are still gone (nothing here
+    should have disturbed that, but worth a glance).

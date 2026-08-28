@@ -73,6 +73,12 @@ the top on Austin's installed iPhone app, across the scenarios above.
 
 **Exit criteria:** every saved restaurant is visible and tappable on the map and in a list.
 
+**Status: built 2026-08-28 (build 6), pending on-device confirmation.** Pins
+are rating-aware (filled + numbered for Been, hollow for Want to Go), the
+detail view is a bottom sheet over the map, and the Phase 2 interim list was
+upgraded in place — tapping a row now focuses the map and opens the sheet
+instead of jumping to the edit form. See PROGRESS.md's Phase 4 section.
+
 ## Phase 5 — Search & filtering
 
 - Area search (by town/city derived from address).
