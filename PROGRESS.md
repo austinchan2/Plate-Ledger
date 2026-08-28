@@ -832,3 +832,12 @@ ranges):
   restaurant matches) — deferred since Phase 2, unchanged by this phase.
   See PROJECT_PLAN.md's "Known issues carried forward."
 - Status bar color and the rest of the visual design pass — Phase 7.
+
+### Phase 5 closed out (2026-08-28)
+
+Austin confirmed: **all tests pass.** Phase 5's exit criteria are met — the
+§7 worked example (search a town, filter cuisine, filter status, see rated
+results) works end-to-end on-device, and opening the list after panning to
+a new area surfaces that area's restaurants first.
+
+**Phase 5 is done.** Phase 6 (Apple Maps handoff) is next, in a new chat.

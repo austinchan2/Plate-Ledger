@@ -106,7 +106,7 @@ Phase 4 section.
 opening the list after panning to a new area surfaces that area's
 restaurants first.
 
-**Status: Built, awaiting on-device confirmation (2026-08-28, build 8).**
+**Status: DONE — confirmed by Austin on device 2026-08-28 (build 8).**
 Search (one box: name/notes/town/address), all filters from §7 (status,
 cuisine, minimum rating, price range, service style, non-chain, good date
 spot, plus every confirmed §6.3 field — would go again, good for groups,
@@ -115,9 +115,7 @@ AND-across-fields/OR-within-field. The old Want-to-Go/Been list grouping is
 gone — replaced with one flat list ordered by distance from `map.getCenter()`
 at the moment the list opens, distance shown per row, status shown as a
 small badge per row (Austin's call, 2026-08-28: flat list with distance
-shown, not grouped). Headless-tested (27 assertions, including the exact §7
-worked example) since this session has no browser; still needs the real
-on-device pass before this closes. See PROGRESS.md's Phase 5 section.
+shown, not grouped). See PROGRESS.md's Phase 5 section.
 
 ## Phase 6 — Apple Maps handoff
 
