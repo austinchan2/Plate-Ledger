@@ -489,3 +489,21 @@ try that before assuming the CSS/meta-tag change itself is wrong.
 cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
 git push
 ```
+
+### Phase 3 closed out (2026-08-28)
+
+Austin confirmed on build 5: **both bugs fixed.** Bottom bar gone for good
+(the `touch-action: none` fix worked — confirms this really was WKWebView's
+native bounce, not something reachable via JS event handling). Top fade
+gone too (the solid status bar took effect, most likely after Austin
+deleted and re-added the Home Screen icon so iOS picked up the new
+`apple-mobile-web-app-status-bar-style` meta tag).
+
+**Exit criteria met.** One follow-up noted for later, not blocking: the
+solid status bar is currently whatever `default` renders as (light,
+unstyled) rather than a deliberate color — logged in PROJECT_PLAN.md's
+Phase 7 (polish) section to pick a real color for it during the general
+visual design pass, rather than re-opening Phase 3 for a cosmetic tweak.
+
+**Phase 3 is done.** Austin is starting Phase 4 (map + list display) in a
+new chat.
