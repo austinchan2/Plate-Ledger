@@ -59,6 +59,25 @@ body {
   font-size: 10px;
 }
 
+/* Small, unobtrusive build marker (js/version.js) — bottom-center, the one
+   spot not already used by a control, so it never competes with the List /
+   Settings / Add / zoom controls for a corner. */
+#build-version-tag {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 6px);
+  transform: translateX(-50%);
+  z-index: 900;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  color: #999;
+  font-size: 10px;
+  line-height: 1.4;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 /* --- Phase 2: top-level buttons (Add / List / Settings) ---------------- */
 /* Bare-functional styling for now — the real visual design pass is Phase 6
    (PROJECT_PLAN.md), including fixing these controls sitting close to the

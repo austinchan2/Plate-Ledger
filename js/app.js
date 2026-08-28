@@ -25,6 +25,19 @@
     { passive: false }
   );
 
+  // Small unobtrusive build marker (js/version.js) so Austin can glance at
+  // the installed app and confirm a given push actually reached his phone.
+  if (window.PLATE_LEDGER_BUILD) {
+    var buildTag = document.createElement("div");
+    buildTag.id = "build-version-tag";
+    buildTag.textContent =
+      "build " +
+      window.PLATE_LEDGER_BUILD.number +
+      " \u00b7 " +
+      window.PLATE_LEDGER_BUILD.builtAt;
+    document.body.appendChild(buildTag);
+  }
+
   // Fallback center: roughly the middle of the contiguous US, zoomed way out.
   // If geolocation succeeds, we recenter on the user instead.
   var FALLBACK_CENTER = [39.8283, -98.5795];
