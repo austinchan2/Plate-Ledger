@@ -343,3 +343,30 @@ reinstalling. This is **build 1**.
 cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
 git push
 ```
+
+### Cache-busting fix (2026-08-28)
+
+Austin pushed build 1, refreshed several times in both the installed app
+and Safari, and never saw the build tag. Checked the live GitHub Pages URL
+directly from this session (fetched js/version.js from
+https://austinchan2.github.io/Plate-Ledger/) — build 1 was already live and
+correct on the server. So this wasn't a deploy delay or a failed push, it
+was his phone serving a cached copy of the page instead of fetching the new
+one (GitHub Pages doesn't support custom Cache-Control headers, and
+installed-PWA/Safari caching on iOS can outlast a normal reload).
+
+Added a `?v=N` query string to every local `<script>`/`<link>` tag in
+index.html (not the pinned Leaflet CDN ones), kept in lockstep with
+js/version.js's build number from now on. This doesn't retroactively fix
+the build-1 page Austin already has cached — he still needs one clean
+fetch to pick it up (see chat reply for how) — but once he does, every
+future build's JS/CSS becomes a genuinely new URL, so a stale cache can't
+silently hide an update again.
+
+**This is build 2** — same content as build 1, plus the cache-busting fix.
+
+**Not pushed yet** — same as every phase, pushing is on Austin:
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
