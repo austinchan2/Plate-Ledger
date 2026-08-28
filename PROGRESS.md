@@ -841,3 +841,48 @@ results) works end-to-end on-device, and opening the list after panning to
 a new area surfaces that area's restaurants first.
 
 **Phase 5 is done.** Phase 6 (Apple Maps handoff) is next, in a new chat.
+
+## Phase 6 — Apple Maps handoff
+
+Added a "Directions" button to the restaurant detail card (in the header,
+next to Edit — Directions comes first since it's the action Austin will
+tap most). It builds a `maps.apple.com` link from the restaurant's stored
+coordinates (`daddr=<lat>,<lng>`), falling back to the stored address text
+if coordinates are missing, and labels the destination pin with the
+restaurant's name (`q=`). No `dirflg` is set, so Apple Maps opens with its
+own driving/walking/transit picker rather than us guessing a mode. Tapping
+it is a real link tap (not a JS-synthesized navigation), which is what lets
+iOS hand off to the native Apple Maps app instead of opening a web preview.
+
+**This is build 9.**
+
+### Your turn — push, then test on your phone
+
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+
+Then check:
+
+1. Build tag at the bottom reads **build 9**.
+2. Open any restaurant's detail card (tap a pin or a list row) — a red
+   "Directions" button now sits next to "Edit" in the card header.
+3. Tap "Directions" from the installed Home Screen app — it should open
+   the native **Apple Maps app** (not a Safari tab / web preview), with
+   the restaurant already set as the destination and ready for
+   turn-by-turn directions.
+4. The destination pin/label in Apple Maps should show the restaurant's
+   name.
+5. Try it on a restaurant you added by manual address entry (no map pin
+   search) too, if you have one — it should still work, just routed off
+   the address text instead of coordinates.
+6. Everything else (pins, list, filters, detail card fields) is unchanged
+   from Phase 5.
+
+### Open items still logged for later phases
+
+- Add-restaurant search quality (Nominatim not prioritizing actual
+  restaurant matches) — deferred since Phase 2, unchanged by this phase.
+  See PROJECT_PLAN.md's "Known issues carried forward."
+- Status bar color and the rest of the visual design pass — Phase 7.
