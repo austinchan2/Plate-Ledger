@@ -130,4 +130,49 @@
   } else {
     onLocateFailed();
   }
+
+  // Phase 7: jump-to-current-location button (Austin, 2026-08-28, during
+  // Phase 6 testing) — recenters on demand, distinct from the one-time
+  // opening-view auto-center above. Stacked directly above the Add FAB.
+  var LOCATE_ICON_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle cx="12" cy="12" r="7"></circle>' +
+    '<circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"></circle>' +
+    '<line x1="12" y1="1.5" x2="12" y2="5"></line>' +
+    '<line x1="12" y1="19" x2="12" y2="22.5"></line>' +
+    '<line x1="1.5" y1="12" x2="5" y2="12"></line>' +
+    '<line x1="19" y1="12" x2="22.5" y2="12"></line>' +
+    "</svg>";
+
+  function buildLocateButton() {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "locate-btn";
+    btn.setAttribute("aria-label", "Center on my location");
+    btn.innerHTML = LOCATE_ICON_SVG;
+
+    btn.onclick = function () {
+      var pos = window.PlateLedgerMap.userPosition;
+      if (!pos) {
+        // No fix yet (or geolocation failed) — a quick nudge animation says
+        // "nothing to jump to" without an intrusive alert().
+        btn.classList.remove("locate-btn-nudge");
+        // eslint-disable-next-line no-unused-expressions
+        void btn.offsetWidth; // restart the animation if clicked again quickly
+        btn.classList.add("locate-btn-nudge");
+        return;
+      }
+      window.PlateLedgerMap.suppressAutoCenter = true;
+      map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), LOCATED_ZOOM), { animate: true });
+    };
+
+    document.body.appendChild(btn);
+
+    window.addEventListener("plateledger:located", function () {
+      btn.classList.add("locate-btn-active");
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", buildLocateButton);
 })();

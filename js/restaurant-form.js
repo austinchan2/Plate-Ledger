@@ -30,6 +30,21 @@ var PlateLedgerForm = (function () {
     overlayEl = null;
   }
 
+  // Phase 7: a soft location hint passed to PlateLedgerGeocode so search/
+  // geocode results are ranked toward wherever Austin actually is (or, if we
+  // have no GPS fix yet, wherever the map is currently looking) instead of
+  // being unbiased free-text lookups. Never a hard filter — see geocode.js.
+  function locationHint() {
+    var pm = window.PlateLedgerMap;
+    if (!pm) return null;
+    if (pm.userPosition) return { lat: pm.userPosition.lat, lng: pm.userPosition.lng };
+    if (pm.map) {
+      var c = pm.map.getCenter();
+      return { lat: c.lat, lng: c.lng };
+    }
+    return null;
+  }
+
   function notifyChanged() {
     window.dispatchEvent(new CustomEvent("plateledger:changed"));
   }
@@ -242,7 +257,7 @@ var PlateLedgerForm = (function () {
           resultsWrap.innerHTML = "";
           if (!query.trim()) return;
           resultsWrap.appendChild(el("div", { class: "search-status", text: "Searching…" }));
-          PlateLedgerGeocode.searchPlaces(query)
+          PlateLedgerGeocode.searchPlaces(query, { near: locationHint() })
             .then(function (results) {
               resultsWrap.innerHTML = "";
               if (!results.length) {
@@ -286,23 +301,45 @@ var PlateLedgerForm = (function () {
       var input = el("input", { type: "text", class: "text-input", placeholder: "Street address, city, state" });
       input.value = working.address || "";
       var status = el("div", { class: "search-status" });
+      var resultsWrap = el("div", { class: "search-results" });
       var lookupBtn = el("button", { type: "button", text: "Look up address", class: "small-btn" });
       lookupBtn.onclick = function () {
         var address = input.value.trim();
         if (!address) return;
+        resultsWrap.innerHTML = "";
         status.textContent = "Looking up…";
-        PlateLedgerGeocode.geocodeAddress(address)
-          .then(function (r) {
-            if (!r) {
+        PlateLedgerGeocode.geocodeAddress(address, { near: locationHint() })
+          .then(function (results) {
+            if (!results.length) {
               status.textContent = "Couldn't find that address. Check it and try again.";
               return;
             }
-            working.address = address;
-            working.town = r.town;
-            working.lat = r.lat;
-            working.lng = r.lng;
-            mode = "confirmed";
-            render();
+            // Phase 7: show every candidate rather than silently trusting
+            // whichever Nominatim ranked first — grid-numbered addresses
+            // (e.g. "800 N") are genuinely ambiguous across towns that share
+            // the same numbering scheme, which is what caused a pin to land
+            // a couple of blocks off. Letting Austin pick (or notice none of
+            // them are right and refine the search) is the honest fix.
+            status.textContent =
+              results.length > 1
+                ? "Multiple matches — tap the right one:"
+                : "Confirm this is the right location:";
+            results.forEach(function (r) {
+              var row = el("button", { type: "button", class: "search-result-row", text: r.displayName });
+              row.onclick = function () {
+                // Keep what Austin actually typed as the saved address text
+                // (unlike search-by-name, where the found place's own name
+                // is the more useful label) — only the coordinates/town come
+                // from the picked candidate.
+                working.address = address;
+                working.town = r.town;
+                working.lat = r.lat;
+                working.lng = r.lng;
+                mode = "confirmed";
+                render();
+              };
+              resultsWrap.appendChild(row);
+            });
           })
           .catch(function () {
             status.textContent = "Lookup failed. Check your connection and try again.";
@@ -311,6 +348,7 @@ var PlateLedgerForm = (function () {
       body.appendChild(input);
       body.appendChild(lookupBtn);
       body.appendChild(status);
+      body.appendChild(resultsWrap);
       var searchLink = el("button", { type: "button", text: "Search by name instead", class: "link-btn" });
       searchLink.onclick = function () {
         mode = "search";

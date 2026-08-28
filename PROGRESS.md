@@ -905,3 +905,120 @@ this phase:
   list search box) — see PROJECT_PLAN.md's Phase 7 section.
 
 **Phase 6 is done.** Phase 7 (polish) is next, in a new chat.
+
+## Phase 7 — Polish & real-world use
+
+First pass at the whole Phase 7 backlog (PROJECT_PLAN.md), all in one build
+per Austin's request ("this one's a big one, let's do as much as we can
+first pass"). Covers:
+
+- **Real app icon.** A white map-pin silhouette (echoing the app's own
+  `.pl-pin` shape) on a brick-red gradient, with a thin gold ring accent —
+  same visual language as the in-app "high rating" pin. Regenerated
+  `icons/apple-touch-icon.png`, `icons/icon-192.png`, `icons/icon-512.png`.
+  Replacing the Home Screen icon needs a delete-and-re-add, same as the
+  Phase 3 status-bar meta tag did — see the test checklist below.
+- **General visual design pass.** Introduced a real set of design tokens
+  (`:root` CSS variables in `css/styles.css` — brick-red primary, gold
+  accent, warm cream neutrals instead of cold grays) used consistently
+  everywhere instead of one-off hex values. List rows are now card-style
+  (border, rounded corners, shadow) instead of flat dividers. Every raised
+  tappable control (FAB, top buttons, pills, list rows, form buttons) now
+  has a visible press state (`:active` scale + opacity) — nothing had any
+  touch feedback before this, which made taps feel unregistered. Buttons,
+  badges, and the detail sheet's action buttons now use pill/rounded
+  shapes consistently; form inputs get a visible focus ring. No structural
+  HTML changes — this was a CSS-only pass, so nothing about *how* the app
+  works changed, only how it looks.
+- **Home Screen naming — audited, no change needed.** `apple-mobile-web-app-title`
+  is already set to "Plate Ledger" (was already correct since early
+  scaffolding), which is what iOS actually reads for the Home Screen label.
+- **Status bar color — investigated, staying as-is (`default`).** iOS only
+  exposes three values for `apple-mobile-web-app-status-bar-style`:
+  `default` (light bar), `black` (solid black bar), or `black-translucent`
+  (transparent — page content shows through, tinted). There's no way to
+  give it an arbitrary hex color; `black-translucent` is the only mode
+  where the page's own color could show through at all, and that's the
+  exact mode Phase 3 moved away from after five build iterations to kill a
+  top-of-screen fade artifact. Re-opening that isn't worth risking for a
+  bar color, especially since the app's panels (List/Settings/Add forms)
+  all have white headers right at the top — `black` would make their
+  icons unreadable. Leaving `default`, which already reads fine against
+  the app's white/cream panels.
+- **Splash flash reduced.** `manifest.json`'s `background_color` (the
+  color iOS shows briefly on cold launch before content paints) changed
+  from plain white to the new warm cream (`#faf6ee`) to match the app's
+  actual background instead of a slightly-off white.
+- **Jump-to-current-location button** (`js/app.js`, new `#locate-btn`,
+  stacked directly above the Add FAB). Calls `map.setView()` on
+  `PlateLedgerMap.userPosition`; if no GPS fix has arrived yet (or
+  geolocation failed), tapping it just does a quick nudge animation
+  instead of silently doing nothing.
+- **Clear button on list search** (`js/list-settings.js`). A round "×"
+  button appears inside the search box once there's text, clearing it in
+  one tap — a real DOM element rather than relying on iOS's built-in
+  `type="search"` cancel button, which wasn't a reliable enough target.
+- **Add-restaurant search reliability** (`js/geocode.js`). Name search now
+  passes `layer=poi` first (biases toward actual places, not
+  streets/addresses), falling back to an unfiltered retry if that comes
+  back empty. Both search and manual-address lookup now also pass a soft
+  location bias (`viewbox` + `bounded=0`, never a hard filter) built from
+  the map's current view or a live GPS fix, via a new `locationHint()`
+  helper in `js/restaurant-form.js`. Worth setting expectations on this
+  one honestly: Nominatim's free-text business-name search has real limits
+  — this should meaningfully help, but won't guarantee every place is
+  found, since OSM's POI coverage and name-matching aren't Google-Maps-grade.
+- **Manual-address geocoding accuracy** (`js/geocode.js` +
+  `js/restaurant-form.js`). `geocodeAddress()` now returns up to 3 ranked
+  candidates instead of blindly trusting whichever Nominatim ranked first,
+  and the manual-entry flow shows them the same way name search already
+  does — tap the right one. This directly targets the "430 W 800 N, Orem"
+  bug: grid-numbered addresses are genuinely ambiguous across towns that
+  share the same numbering scheme, so seeing (and picking between) the
+  actual candidates is the honest fix, not a guess at a single "best" one.
+
+**This is build 10.**
+
+### Your turn — push, then test on your phone
+
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+
+Then, since the icon changed, **delete the Plate Ledger icon from your Home
+Screen and re-add it from Safari** (same as the Phase 3 status-bar fix
+needed) — otherwise you'll keep seeing the old placeholder icon even after
+the page itself updates. After that:
+
+1. Build tag at the bottom reads **build 10**.
+2. New Home Screen icon: a white map-pin on a brick-red background with a
+   thin gold ring — not the old placeholder.
+3. General look: buttons, badges, and list rows should read as more
+   "finished" — rounded card-style list rows with shadows, pill-shaped
+   buttons, and every button should visibly dim/shrink slightly the moment
+   you press it (List, Settings, +, pills, Save, Edit, Directions, etc.).
+4. Tap **☰ List** — a small round **×** should appear inside the search
+   box as soon as you type something, and tapping it clears the search
+   instantly.
+5. On the map, a new **round button with a crosshair/target icon** should
+   sit directly above the **+** button — tap it to recenter the map on
+   your current location. If you tap it before a GPS fix has arrived, it
+   should just do a quick wiggle rather than nothing happening.
+6. Add a restaurant using **search by name** — try "5 Star BBQ" again (or
+   another real local place) and see if it turns up now. Not guaranteed
+   every time, but should be noticeably better than before.
+7. Add or edit a restaurant using **manual address entry** — enter an
+   address and tap "Look up address". You should now see a short list of
+   candidate matches to tap (not just get dropped straight to "confirmed")
+   — try "430 W 800 N, Orem" again and check whether the right one is
+   in the list and whether picking it lands the pin correctly this time.
+8. Confirm nothing else broke: pins, detail sheet, filters, Apple Maps
+   Directions button, Export/Import/Delete all in Settings.
+
+### Open items still logged for later phases
+
+- None carried forward from the original Phase 7 backlog yet — this was a
+  first pass at all of it. Log anything Austin flags from this test pass
+  as new Phase 7 follow-ups (or a v1.1 item, per PROJECT_PLAN.md) once
+  reviewed.

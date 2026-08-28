@@ -1,3 +1,37 @@
+/* Plate Ledger — design tokens (Phase 7 visual pass). One warm, food-forward
+   palette used everywhere below instead of one-off hex values: a brick-red
+   primary (matches the home-screen icon/theme-color), a gold accent for
+   ratings/"this one's great", and a warm cream neutral scale instead of
+   cold grays, so panels/cards/map all read as one coherent app rather than
+   a bare prototype. */
+:root {
+  --color-primary: #c0392b;
+  --color-primary-dark: #a5311f;
+  --color-primary-tint: #fdecea;
+  --color-gold: #e6a817;
+
+  --color-bg-map: #f2efe9;
+  --color-bg-app: #faf6ee;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f6f1e7;
+
+  --color-text: #2a2320;
+  --color-text-secondary: #6f645a;
+  --color-text-tertiary: #9c9186;
+
+  --color-border: #e7ded0;
+  --color-border-strong: #d8cbb6;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 3px rgba(60, 40, 20, 0.14);
+  --shadow-md: 0 4px 14px rgba(60, 40, 20, 0.18);
+  --shadow-lg: 0 -3px 20px rgba(60, 40, 20, 0.2);
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -19,11 +53,43 @@ html, body {
      touch-action: none, it has to be an explicit value. */
   touch-action: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--color-text);
+  -webkit-tap-highlight-color: transparent;
   /* Matches OSM tiles' typical land color, not pure white. If any sliver of
      this ever shows through at an edge (e.g. during a brief native bounce
      iOS's touchmove guard doesn't fully catch), it should blend with the
      map instead of reading as an obvious white bar/flash. */
-  background: #f2efe9;
+  background: var(--color-bg-map);
+}
+
+button, input, textarea, select {
+  font-family: inherit;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Generic touch feedback: every raised, tappable control in the app dims
+   and settles very slightly on press so a tap reads as registered even
+   before whatever it triggers finishes. iOS PWAs get no native button
+   press state, so without this every tap feels inert. */
+#add-fab-btn, #list-toggle-btn, #settings-toggle-btn, #locate-btn,
+.form-close-btn, .form-save-btn, .pill-btn, .small-btn, .settings-btn,
+.delete-btn, .list-row, .search-result-row, .detail-edit-btn,
+.detail-directions-btn, .filters-toggle-btn, .star-btn, .search-clear-btn {
+  transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.15s ease,
+    border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#add-fab-btn:active, #list-toggle-btn:active, #settings-toggle-btn:active,
+#locate-btn:active, .form-close-btn:active, .form-save-btn:active,
+.pill-btn:active, .small-btn:active, .settings-btn:active, .delete-btn:active,
+.list-row:active, .search-result-row:active, .detail-edit-btn:active,
+.detail-directions-btn:active, .filters-toggle-btn:active, .star-btn:active {
+  transform: scale(0.96);
+  opacity: 0.85;
 }
 
 /* iOS Safari (including installed standalone PWAs) doesn't fully honor
@@ -35,6 +101,7 @@ html, body {
 body {
   position: fixed;
   inset: 0;
+  background: var(--color-bg-app);
 }
 
 #map {
@@ -53,7 +120,7 @@ body {
      there instead of the map being pointlessly hidden behind it. */
   padding-top: env(safe-area-inset-top);
   box-sizing: border-box;
-  background: #f2efe9;
+  background: var(--color-bg-map);
 }
 
 /* Leaflet's own corner controls (zoom, attribution) sit inside #map and
@@ -80,6 +147,10 @@ body {
   font-size: 10px;
 }
 
+.leaflet-touch .leaflet-bar a {
+  border-radius: var(--radius-sm);
+}
+
 /* Small, unobtrusive build marker (js/version.js) — bottom-center, the one
    spot not already used by a control, so it never competes with the List /
    Settings / Add / zoom controls for a corner. */
@@ -90,34 +161,31 @@ body {
   transform: translateX(-50%);
   z-index: 900;
   padding: 2px 8px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.55);
-  color: #999;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-tertiary);
   font-size: 10px;
   line-height: 1.4;
   pointer-events: none;
   white-space: nowrap;
 }
 
-/* --- Phase 2: top-level buttons (Add / List / Settings) ---------------- */
-/* Bare-functional styling for now — the real visual design pass is Phase 6
-   (PROJECT_PLAN.md), including fixing these controls sitting close to the
-   safe-area edge. */
+/* --- Top-level buttons (Add / List / Settings / Locate) ------------------ */
 
 #add-fab-btn {
   position: fixed;
   right: calc(env(safe-area-inset-right) + 16px);
   bottom: calc(env(safe-area-inset-bottom) + 16px);
   z-index: 1000;
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   border: none;
-  background: #c0392b;
+  background: linear-gradient(160deg, var(--color-primary), var(--color-primary-dark));
   color: #fff;
-  font-size: 28px;
+  font-size: 30px;
   line-height: 1;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 #list-toggle-btn {
@@ -125,13 +193,14 @@ body {
   top: calc(env(safe-area-inset-top) + 10px);
   left: calc(env(safe-area-inset-left) + 10px);
   z-index: 1000;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #222;
+  padding: 9px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-text);
   font-size: 14px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
 #settings-toggle-btn {
@@ -139,32 +208,77 @@ body {
   top: calc(env(safe-area-inset-top) + 10px);
   right: calc(env(safe-area-inset-right) + 10px);
   z-index: 1000;
-  width: 38px;
-  height: 38px;
-  border: none;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
-  color: #222;
-  font-size: 16px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-text);
+  font-size: 17px;
+  box-shadow: var(--shadow-sm);
 }
 
-/* --- Phase 2: shared panel chrome (List panel, Settings panel, Form) ---- */
+/* Jump-to-current-location (Phase 7): stacked directly above the Add FAB,
+   sharing its right-edge alignment. Neutral/gray glyph while no GPS fix has
+   arrived yet, switches to full brand color once PlateLedgerMap.userPosition
+   is available (js/app.js toggles .locate-btn-active); stays a dim,
+   still-tappable gray if geolocation failed outright, since we have no fix
+   to center on. */
+#locate-btn {
+  position: fixed;
+  right: calc(env(safe-area-inset-right) + 17px);
+  bottom: calc(env(safe-area-inset-bottom) + 84px);
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-text-tertiary);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+#locate-btn.locate-btn-active {
+  color: var(--color-primary);
+}
+
+#locate-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+#locate-btn.locate-btn-nudge {
+  animation: locate-nudge 0.4s ease;
+}
+
+@keyframes locate-nudge {
+  0%, 100% { transform: none; }
+  30% { transform: scale(0.9); }
+  60% { transform: scale(1.05); }
+}
+
+/* --- Shared panel chrome (List panel, Settings panel, Form) -------------- */
 
 .form-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: calc(env(safe-area-inset-top) + 12px) 14px 12px;
-  border-bottom: 1px solid #eee;
-  background: #fff;
+  padding: calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
 }
 
 .form-title {
   flex: 1;
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
+  letter-spacing: -0.01em;
 }
 
 .form-header-spacer {
@@ -176,28 +290,29 @@ body {
   height: 30px;
   border: none;
   border-radius: 50%;
-  background: #f2f2f2;
-  color: #444;
+  background: var(--color-surface-alt);
+  color: var(--color-text-secondary);
   font-size: 15px;
 }
 
 .form-save-btn {
-  padding: 7px 14px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 8px;
-  background: #c0392b;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
   color: #fff;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
 }
 
-/* --- Phase 2: Add/Edit form ---------------------------------------------- */
+/* --- Add/Edit form --------------------------------------------------------- */
 
 .form-overlay {
   position: fixed;
   inset: 0;
   z-index: 2000;
-  background: #fff;
+  background: var(--color-bg-app);
   display: flex;
   flex-direction: column;
 }
@@ -209,19 +324,21 @@ body {
      won't actually shrink to its container and scroll -- it grows to fit all
      its content instead, pushing Save/Delete off the bottom of the screen. */
   overflow-y: auto;
-  padding: 14px calc(env(safe-area-inset-left) + 14px) calc(env(safe-area-inset-bottom) + 30px) calc(env(safe-area-inset-right) + 14px);
+  padding: 16px calc(env(safe-area-inset-left) + 16px) calc(env(safe-area-inset-bottom) + 30px) calc(env(safe-area-inset-right) + 16px);
 }
 
 .field-row {
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .field-label {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: #555;
-  margin-bottom: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  margin-bottom: 7px;
 }
 
 .text-input,
@@ -229,12 +346,21 @@ body {
 .select-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 9px 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
   font-size: 15px;
   font-family: inherit;
-  background: #fff;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.text-input:focus,
+.textarea-input:focus,
+.select-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-tint);
 }
 
 .textarea-input {
@@ -248,18 +374,21 @@ body {
 }
 
 .pill-btn {
-  padding: 8px 14px;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  background: #f7f7f7;
-  color: #333;
+  padding: 8px 15px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-size: 14px;
+  font-weight: 500;
 }
 
 .pill-btn.pill-selected {
-  background: #c0392b;
-  border-color: #c0392b;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
 }
 
 .status-btn {
@@ -277,12 +406,12 @@ body {
   background: none;
   font-size: 28px;
   line-height: 1;
-  color: #ccc;
+  color: var(--color-border-strong);
   padding: 0 2px;
 }
 
 .star-btn.star-filled {
-  color: #e6a817;
+  color: var(--color-gold);
 }
 
 .checkbox-list {
@@ -298,6 +427,12 @@ body {
   font-size: 14px;
 }
 
+.checkbox-item input[type="checkbox"] {
+  accent-color: var(--color-primary);
+  width: 17px;
+  height: 17px;
+}
+
 .add-row {
   display: flex;
   gap: 8px;
@@ -309,10 +444,11 @@ body {
 }
 
 .small-btn {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #f2f2f2;
+  padding: 9px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
   font-size: 14px;
   white-space: nowrap;
 }
@@ -320,17 +456,19 @@ body {
 .link-btn {
   border: none;
   background: none;
-  color: #c0392b;
+  color: var(--color-primary);
   font-size: 14px;
-  text-decoration: underline;
+  font-weight: 600;
+  text-decoration: none;
   padding: 6px 0;
   display: block;
 }
 
 .address-body {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: var(--color-surface);
 }
 
 .address-confirmed {
@@ -339,7 +477,7 @@ body {
 }
 
 .address-town {
-  color: #777;
+  color: var(--color-text-tertiary);
   font-size: 13px;
   margin-top: 2px;
 }
@@ -355,44 +493,46 @@ body {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 9px 6px;
+  padding: 10px 8px;
   border: none;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   background: none;
+  color: var(--color-text);
   font-size: 14px;
+  border-radius: var(--radius-sm);
 }
 
 .search-status {
-  color: #777;
+  color: var(--color-text-secondary);
   font-size: 13px;
   padding: 6px 0;
 }
 
 .been-section {
-  border-top: 1px solid #eee;
-  padding-top: 14px;
-  margin-top: 4px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+  margin-top: 6px;
 }
 
 .delete-btn {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #c0392b;
-  border-radius: 8px;
-  background: #fdecea;
-  color: #c0392b;
+  padding: 13px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
   font-size: 15px;
-  font-weight: 600;
-  margin-top: 10px;
+  font-weight: 700;
+  margin-top: 12px;
 }
 
-/* --- Phase 2: interim restaurant list panel ------------------------------ */
+/* --- Restaurant list panel ------------------------------------------------- */
 
 .list-panel {
   position: fixed;
   inset: 0;
   z-index: 1500;
-  background: #fff;
+  background: var(--color-bg-app);
   flex-direction: column;
 }
 
@@ -401,14 +541,14 @@ body {
   flex: 1;
   min-height: 0; /* see .form-body comment */
   overflow-y: auto;
-  padding: 10px calc(env(safe-area-inset-left) + 14px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-right) + 14px);
+  padding: 8px calc(env(safe-area-inset-left) + 14px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-right) + 14px);
 }
 
 .list-section-header {
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #999;
+  color: var(--color-text-tertiary);
   margin: 16px 0 6px;
 }
 
@@ -416,63 +556,84 @@ body {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 10px 6px;
-  border: none;
-  border-bottom: 1px solid #eee;
-  background: none;
+  padding: 12px 12px;
+  margin-bottom: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .list-row-name {
-  font-size: 15px;
-  color: #222;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
 }
 
 .list-row-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
   font-size: 13px;
-  color: #888;
-  margin-top: 2px;
+  color: var(--color-text-secondary);
+}
+
+.list-row-rating {
+  color: var(--color-gold);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.list-row-thin {
+  color: var(--color-text-tertiary);
 }
 
 .list-empty {
-  color: #888;
+  color: var(--color-text-secondary);
   font-size: 14px;
-  padding: 20px 6px;
+  padding: 40px 24px;
   text-align: center;
+  line-height: 1.5;
 }
 
-/* --- Phase 2: Settings panel --------------------------------------------- */
+/* --- Settings panel --------------------------------------------------------- */
 
 .settings-panel {
   position: fixed;
   inset: 0;
   z-index: 1600;
-  background: #fff;
+  background: var(--color-bg-app);
   flex-direction: column;
 }
 
 .settings-body {
-  padding: 16px calc(env(safe-area-inset-left) + 14px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-right) + 14px);
+  padding: 18px calc(env(safe-area-inset-left) + 14px) calc(env(safe-area-inset-bottom) + 20px) calc(env(safe-area-inset-right) + 14px);
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 .settings-btn {
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #f7f7f7;
+  padding: 13px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
   font-size: 15px;
+  font-weight: 600;
   text-align: left;
+  box-shadow: var(--shadow-sm);
 }
 
 .settings-btn.settings-danger {
-  background: #fdecea;
-  border-color: #c0392b;
-  color: #c0392b;
+  background: var(--color-primary-tint);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
-/* --- Phase 4: map pins ---------------------------------------------------- */
+/* --- Map pins --------------------------------------------------------------- */
 /* Classic teardrop: a square with three rounded corners, rotated -45deg so the
    one square corner points down at the coordinate. The label is counter-rotated
    +45deg so the rating number reads upright. `.pl-pin-icon` itself is
@@ -492,7 +653,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 6px rgba(60, 40, 20, 0.4);
   box-sizing: border-box;
 }
 
@@ -506,22 +667,22 @@ body {
 /* "Been" — solid, with the rating printed in it. Filled + numbered is what
    makes these readable as "visited, and here's the verdict" without a tap. */
 .pl-pin-been {
-  background: #c0392b;
+  background: var(--color-primary);
   border: 2px solid #fff;
   color: #fff;
 }
 
 /* 4-5 stars get a gold rim so the best places stand out on a dense map. */
 .pl-pin-been.pl-pin-high {
-  border-color: #e6a817;
+  border-color: var(--color-gold);
 }
 
 /* "Want to Go" — hollow, no number. Deliberately quieter than a Been pin:
    these are the ones still to do, not the ones with a verdict attached. */
 .pl-pin-want {
   background: #fff;
-  border: 3px solid #c0392b;
-  color: #c0392b;
+  border: 3px solid var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* Current-location dot. Deliberately not pin-shaped: it has to read as
@@ -543,7 +704,7 @@ body {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
-/* --- Phase 4: detail bottom sheet ---------------------------------------- */
+/* --- Detail bottom sheet ---------------------------------------------------- */
 /* --detail-base is the resting translateY for the current state; the drag
    handler in js/detail-sheet.js writes `translateY(calc(var(--detail-base) +
    Npx))` inline while a finger is down, so both live in the same coordinate
@@ -557,9 +718,9 @@ body {
   bottom: 0;
   height: 82vh;
   z-index: 1400; /* above the map + FAB, below the list (1500) and form (2000) */
-  background: #fff;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -3px 18px rgba(0, 0, 0, 0.22);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   transform: translateY(var(--detail-base));
@@ -591,13 +752,13 @@ body {
   width: 38px;
   height: 5px;
   border-radius: 3px;
-  background: #d6d6d6;
+  background: var(--color-border-strong);
 }
 
 .detail-head {
   flex: none;
-  padding: 4px 16px 12px;
-  border-bottom: 1px solid #eee;
+  padding: 4px 18px 14px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-title-row {
@@ -608,15 +769,16 @@ body {
 
 .detail-name {
   flex: 1;
-  font-size: 19px;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
 }
 
 .detail-badge {
   flex: none;
-  padding: 3px 9px;
-  border-radius: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -625,55 +787,56 @@ body {
 }
 
 .detail-badge-been {
-  background: #c0392b;
+  background: var(--color-primary);
   color: #fff;
 }
 
 .detail-badge-want {
-  background: #fff;
-  color: #c0392b;
-  border: 1.5px solid #c0392b;
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
 }
 
 .detail-summary {
   margin-top: 6px;
   font-size: 14px;
-  color: #444;
+  color: var(--color-text-secondary);
 }
 
 .detail-address {
   margin-top: 4px;
   font-size: 13px;
-  color: #888;
+  color: var(--color-text-tertiary);
 }
 
 .detail-sheet .detail-actions {
-  margin-top: 12px;
+  margin-top: 14px;
   display: flex;
   gap: 8px;
 }
 
 .detail-edit-btn {
-  padding: 9px 18px;
-  border: 1px solid #c0392b;
-  border-radius: 8px;
-  background: #fff;
-  color: #c0392b;
+  padding: 10px 18px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .detail-directions-btn {
-  padding: 9px 18px;
-  border: 1px solid #c0392b;
-  border-radius: 8px;
-  background: #c0392b;
+  padding: 10px 20px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(160deg, var(--color-primary), var(--color-primary-dark));
   color: #fff;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
   text-decoration: none;
   display: inline-block;
   line-height: 1.2;
+  box-shadow: var(--shadow-sm);
 }
 
 .detail-body {
@@ -683,100 +846,111 @@ body {
   flex: 1;
   min-height: 0; /* see .form-body comment */
   overflow-y: auto;
-  padding: 12px calc(env(safe-area-inset-left) + 16px)
-    calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-right) + 16px);
+  padding: 12px calc(env(safe-area-inset-left) + 18px)
+    calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-right) + 18px);
 }
 
 .detail-row {
   display: flex;
   gap: 12px;
-  padding: 9px 0;
-  border-bottom: 1px solid #f2f2f2;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .detail-row-label {
   flex: none;
   width: 40%;
-  font-size: 13px;
-  font-weight: 600;
-  color: #777;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-secondary);
 }
 
 .detail-row-value {
   flex: 1;
   font-size: 14px;
-  color: #222;
+  color: var(--color-text);
   white-space: pre-wrap;
 }
 
 .detail-link {
   display: inline-block;
   margin-top: 14px;
-  color: #c0392b;
+  color: var(--color-primary);
+  font-weight: 600;
   font-size: 14px;
 }
 
 .detail-empty {
   padding: 18px 0;
-  color: #888;
+  color: var(--color-text-secondary);
   font-size: 14px;
   text-align: center;
 }
 
-/* --- Phase 4: richer list rows ------------------------------------------- */
-
-.list-row-name {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.list-row-meta {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.list-row-rating {
-  color: #e6a817;
-  font-size: 13px;
-  letter-spacing: 0.5px;
-}
-
-.list-row-thin {
-  color: #aaa;
-}
-
-/* --- Phase 5: list search & filters ---------------------------------------- */
+/* --- List search & filters -------------------------------------------------- */
 
 .list-search-row {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 10px calc(env(safe-area-inset-left) + 14px) 8px calc(env(safe-area-inset-right) + 14px);
-  border-bottom: 1px solid #eee;
-  background: #fff;
+  padding: 12px calc(env(safe-area-inset-left) + 14px) 10px calc(env(safe-area-inset-right) + 14px);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
   flex: none;
 }
 
-.list-search-row .text-input {
+.search-input-wrap {
+  position: relative;
   flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrap .search-input {
+  width: 100%;
+  padding-right: 34px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Custom "x in a circle" clear button (Phase 7 — Austin asked for a visible
+   one-tap clear rather than relying on backspace, since the native iOS
+   search-input cancel button wasn't a reliable enough target). Shown only
+   once there's text to clear (toggled from js/list-settings.js). */
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-border-strong);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
 }
 
 .filters-toggle-btn {
   flex: none;
-  padding: 9px 14px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background: #f7f7f7;
-  color: #333;
+  padding: 10px 15px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
   font-size: 14px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 .filters-toggle-btn.filters-toggle-active {
-  background: #c0392b;
-  border-color: #c0392b;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: #fff;
 }
 
@@ -788,24 +962,24 @@ body {
   flex: none;
   max-height: 45vh;
   overflow-y: auto;
-  border-bottom: 1px solid #eee;
-  background: #fafafa;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
 }
 
 .filters-body {
-  padding: 6px calc(env(safe-area-inset-left) + 14px) 10px calc(env(safe-area-inset-right) + 14px);
+  padding: 8px calc(env(safe-area-inset-left) + 14px) 12px calc(env(safe-area-inset-right) + 14px);
 }
 
 .filters-body .field-row {
   margin-bottom: 14px;
 }
 
-/* --- Phase 5: flat proximity-ordered list rows ----------------------------- */
+/* --- Flat proximity-ordered list rows ---------------------------------------- */
 
 .list-row-badge {
   flex: none;
-  padding: 2px 7px;
-  border-radius: 10px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -814,17 +988,17 @@ body {
 }
 
 .list-row-badge-been {
-  background: #c0392b;
+  background: var(--color-primary);
   color: #fff;
 }
 
 .list-row-badge-want {
-  background: #fff;
-  color: #c0392b;
-  border: 1.5px solid #c0392b;
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
 }
 
 .list-row-dist {
-  color: #555;
-  font-weight: 600;
+  color: var(--color-text);
+  font-weight: 700;
 }

@@ -464,14 +464,37 @@
   function buildSearchRow() {
     searchInput = el("input", {
       type: "search",
-      class: "text-input",
+      class: "text-input search-input",
       placeholder: "Search name, notes, or area",
     });
     searchInput.value = filters.query;
+
+    // Phase 7: explicit "x in a circle" clear button (Austin asked for this
+    // during Phase 6 testing) rather than leaning on the native iOS
+    // search-input cancel button, which wasn't a reliable enough tap target.
+    var clearBtn = el("button", { type: "button", text: "\u2715", class: "search-clear-btn" });
+    clearBtn.setAttribute("aria-label", "Clear search");
+
+    function syncClearBtn() {
+      clearBtn.style.display = searchInput.value ? "flex" : "none";
+    }
+    syncClearBtn();
+
     searchInput.oninput = function () {
       filters.query = searchInput.value;
+      syncClearBtn();
       refreshList();
     };
+
+    clearBtn.onclick = function () {
+      searchInput.value = "";
+      filters.query = "";
+      syncClearBtn();
+      searchInput.focus();
+      refreshList();
+    };
+
+    var searchWrap = el("div", { class: "search-input-wrap" }, [searchInput, clearBtn]);
 
     filtersToggleBtn = el("button", { type: "button", text: "Filters", class: "filters-toggle-btn" });
     filtersToggleBtn.onclick = function () {
@@ -479,7 +502,7 @@
       filtersPanel.style.display = filtersVisible ? "block" : "none";
     };
 
-    return el("div", { class: "list-search-row" }, [searchInput, filtersToggleBtn]);
+    return el("div", { class: "list-search-row" }, [searchWrap, filtersToggleBtn]);
   }
 
   // ---- Settings panel -----------------------------------------------------
