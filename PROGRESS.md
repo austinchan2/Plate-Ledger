@@ -140,7 +140,7 @@ being built yet:
 
 ## Phase 2 — Add / Edit restaurant flow
 
-**Status: Built, awaiting Austin's test.** (2026-08-25)
+**Status: Tested and confirmed working.** (2026-08-28)
 
 What's new:
 - `js/geocode.js` — thin wrapper around OpenStreetMap's Nominatim search/geocode
@@ -181,35 +181,46 @@ What's new:
 place from your phone in well under a minute, and later fill in a full
 review when you've been.
 
-### Your turn: pull, test, and report back
+### Testing notes (2026-08-28)
 
-This was built and committed locally but **not pushed** — same as every
-phase so far, pushing is on you. From Terminal:
+Austin confirmed on-device: the **☰ List** button works, and the **+** Add
+button is functional — a restaurant can be searched for, saved, edited, and
+the review fields work as designed. Two real issues with the address search
+came out of that pass, both explicitly deferred to a later stage (not
+blocking Phase 2 from closing):
+
+1. **Search doesn't prioritize restaurant/business name matches.** Typing a
+   restaurant's name currently returns what feels like near-random results
+   from anywhere in the world, rather than putting actual matching
+   businesses first. The underlying Nominatim `/search` call in
+   `js/geocode.js` is a plain free-text query with no result-type
+   restriction — worth trying Nominatim's `layer=poi` param (or similar) to
+   bias toward points-of-interest like restaurants over raw street
+   addresses.
+2. **Search isn't biased toward Austin's location.** Results should prefer
+   places near him over distant matches. Nominatim's `/search` supports a
+   `viewbox` + `bounded=0` param that softly ranks results inside a bounding
+   box higher without excluding results outside it — `js/app.js` already
+   requests geolocation on load, so that (or the current map center) is
+   available to build a `viewbox` from.
+
+Once search quality is fixed, the Name field auto-fill from a selected
+result (already implemented) should reliably suggest the right name on its
+own, rather than Austin needing to type it in.
+
+Also settled 2026-08-27: Austin considered building a native iOS app instead
+(free Apple ID + Xcode, no App Store) to sidestep the PWA's rendering
+quirks, and decided against it — the ~7-day re-signing requirement isn't
+worth it. Staying on the PWA path. See RECOMMENDATION.md's addendum for the
+evaluation.
+
+Delete-with-confirmation and Settings (Export/Import/Delete all) weren't
+explicitly called out in this round of testing, but were covered by an
+automated smoke test before this phase shipped (see the Phase 2 commit
+message) and Austin didn't flag any issues with them.
+
+**Not pushed yet** — same as every phase, pushing is on Austin:
 ```
 cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
 git push
 ```
-Then reload the app on your phone (close it fully from the app switcher and
-reopen from the Home Screen icon, since installed PWAs can cache the old
-version) and try:
-
-1. Tap **+**. Search for a real restaurant near you by name and pick it from
-   the results — confirm the address/town look right.
-2. Try the **"enter address manually"** fallback on a place search doesn't
-   find (or just to test it) — type an address and tap "Look up address."
-3. Fill in Name (if not already filled), **Recommended by**, and Notes, leave
-   status as "Want to Go," and Save. Confirm it took well under a minute.
-4. Tap **☰ List**, find that restaurant, tap it to reopen it in Edit mode.
-5. Switch its status to **Been** and confirm the full review section appears
-   — rating, price, cuisine (try adding a cuisine that's not in the list, like
-   a specific regional cuisine, and confirm it shows up as an option again
-   next time you open a Been restaurant), dietary tags, reservations, noise
-   level, etc. Save.
-6. Reopen it once more and confirm everything you entered is still there.
-7. Try **Delete** on a test entry — confirm it asks you to confirm first.
-8. Tap **⚙ Settings** — try Export (a JSON file should download/share), and
-   Import that same file back in (should say "Imported 1, skipped 0" or
-   similar, not duplicate everything if you still have the original).
-
-Report back "works" or what went wrong, and I'll fix and ask you to re-test
-before Phase 3 (map pins + list view) starts.

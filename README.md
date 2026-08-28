@@ -4,7 +4,7 @@ A personal, single-user iPhone app for keeping your own private database of rest
 
 ## Status
 
-**Phase 2 (Add/Edit restaurant flow) built, awaiting Austin's test on his iPhone.** Phases 0 and 1 are tested and confirmed working. See PROGRESS.md for phase-by-phase status and what to test next.
+**Phase 2 (Add/Edit restaurant flow) tested and confirmed working.** Phase 3 (fixing installed-PWA visual bugs) is next. See PROGRESS.md for phase-by-phase status and what to test next.
 
 ## What this is
 

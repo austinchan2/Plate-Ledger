@@ -101,6 +101,27 @@ the top on Austin's installed iPhone app, across the scenarios above.
 
 **Exit criteria:** Austin is comfortable using this as his actual restaurant list going forward.
 
+## Known issues carried forward (not yet scheduled)
+
+Surfaced during Phase 2 on-device testing (2026-08-28), explicitly deferred
+by Austin to "a later stage" rather than picked now or forced into a
+specific phase number:
+
+- **Add-restaurant search doesn't prioritize actual restaurant/business
+  matches.** Typing a name returns what feels like near-random results from
+  anywhere in the world instead of putting matching businesses first. The
+  Nominatim `/search` call in `js/geocode.js` is unrestricted free-text —
+  try `layer=poi` (or similar) to bias toward points-of-interest over raw
+  addresses/streets.
+- **Search isn't biased toward Austin's location.** Should prefer nearby
+  matches. Nominatim's `/search` supports `viewbox` + `bounded=0` to softly
+  rank results inside a bounding box higher without excluding results
+  outside it. `js/app.js` already requests geolocation on load (and/or the
+  current map center, once Phase 4 lands pins) can seed that box.
+- Once search quality is fixed, the existing Name-autofill-from-search-result
+  behavior (`js/restaurant-form.js`) should start working reliably on its
+  own, since it depends on getting a well-matched result to autofill from.
+
 ## v1.1 (fast-follow, not blocking v1)
 
 - **Photos** — attach photo(s) to a "Been" entry (confirmed wanted, but lower priority per REQUIREMENTS.md §6.3).
