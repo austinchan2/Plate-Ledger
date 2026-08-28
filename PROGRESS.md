@@ -1022,3 +1022,110 @@ the page itself updates. After that:
   first pass at all of it. Log anything Austin flags from this test pass
   as new Phase 7 follow-ups (or a v1.1 item, per PROJECT_PLAN.md) once
   reviewed.
+
+### Build 11 — palette re-theme, map style, geocoding fix, FAB fix (2026-08-28)
+
+Follow-up round after Austin's first look at build 10, all four items he
+raised:
+
+- **Full color re-theme to the "Haunter" palette** from
+  https://pokepalettes.com/#haunter. New `:root` tokens in
+  `css/styles.css`: `--color-primary: #524162` (deep plum — replaces
+  brick red for solid buttons/badges/pins, chosen over the palette's
+  lighter `#ac6acd` specifically for contrast against white text/icons),
+  `--color-primary-light: #ac6acd` (gradient partner), `--color-accent:
+  #de4a31` (vivid orange-red, replaces gold for ratings/"high rated" pin
+  rim — same role, new color), and a dedicated `--color-danger`/
+  `--color-danger-dark` (`#b41818`/`#6a0000`) for delete/destructive
+  actions, which needed their own red now that primary is no longer red.
+  Neutrals shifted cool (lavender-tinted grays/whites) to suit a purple
+  palette instead of the old warm cream scheme. The app icon was
+  regenerated in the new gradient + accent ring. The "you are here" GPS
+  dot deliberately stays map-convention blue — recoloring it purple risked
+  it reading as another pin type.
+- **Map tiles restyled.** Swapped the stock OpenStreetMap raster tiles
+  (`js/app.js`) for CARTO's free, no-API-key Positron (light) basemap —
+  much quieter than stock OSM's road/label-heavy default, which was
+  Austin's complaint. Added a subtle purple color-wash over the map
+  (`css/styles.css`'s `#map-color-wash`, a screen-space tint via
+  `mix-blend-mode: multiply` — not a geographic overlay, doesn't intercept
+  taps) tying the now much-quieter basemap into the new palette.
+- **Add-button (+) centering fixed.** `#add-fab-btn` was relying on
+  `line-height` alone to center its "+" glyph, which doesn't account for
+  the character's own font metrics not being perfectly centered in its em
+  box — same underlying issue `#locate-btn`'s SVG never had, since that
+  one already used flexbox centering. Added `display: flex; align-items:
+  center; justify-content: center` (and `padding: 0`) to both
+  `#add-fab-btn` and `#settings-toggle-btn` (same glyph-button pattern) to
+  fix it properly rather than nudging line-height by feel.
+- **Manual-address geocoding: structured query instead of free text**
+  (`js/geocode.js`). Austin's retest of "430 W 800 N, Orem, UT 84057"
+  still returned three wrong candidates, none containing "800" at all —
+  confirmed the real bug: Nominatim's free-text parser was mis-tokenizing
+  Utah/Mountain-West grid addresses (two number+direction pairs — "430 W
+  800 N" = house number 430 on the street "West 800 North" — badly
+  confuses a parser expecting one). `geocodeAddress()` now parses the
+  typed address into Nominatim's *structured* search fields (street /
+  city / state / postalcode / country) via a new `parseAddressComponents()`
+  — pulling the grid-address pattern out explicitly as the street field —
+  before falling back to the old free-text search if parsing isn't
+  possible or comes back empty. Verified the parser itself against the
+  exact reported string and several other shapes (see the geocode.js file
+  header for the reasoning); couldn't verify the live Nominatim response
+  from this session (no network egress to nominatim.openstreetmap.org from
+  either this bridge or the cloud container it runs in), so this needs
+  Austin's on-device confirmation.
+- **"5 Star BBQ" name search — still not resolving, most likely an
+  OpenStreetMap data-coverage gap, not a query bug.** Couldn't reach
+  Nominatim directly from this session to test further. The POI-layer-bias
+  + fallback logic added in build 10 is still in place and should help in
+  the more common case (a real, indexed place ranking poorly without a
+  location bias) — but if this specific business genuinely isn't in OSM's
+  database under any close name/spelling, no amount of query tuning on our
+  end can produce a result that doesn't exist upstream. Austin can check
+  this directly: search "5 Star BBQ" at
+  https://nominatim.openstreetmap.org/ui/search.html — if nothing shows up
+  there either, it's a data gap (fixable only by adding the place to OSM
+  itself, e.g. via openstreetmap.org's own editor) and manual address
+  entry is the reliable path for that one place meanwhile. If Nominatim's
+  own UI *does* find it, that would point back to something in our query
+  logic and is worth flagging for another look.
+
+**This is build 11.**
+
+### Your turn — push, then test on your phone
+
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+
+Then, since the icon changed again, **delete the Plate Ledger icon from
+your Home Screen and re-add it from Safari**. After that:
+
+1. Build tag reads **build 11**.
+2. New Home Screen icon: the same white pin shape, now on a lavender-to-
+   plum gradient with an orange-red ring (Haunter colors) instead of
+   brick red/gold.
+3. Whole app should read purple/plum now — buttons, badges, pins,
+   selected filters, "Been" pin fill, focus rings — with the orange-red
+   accent showing up on star ratings and the high-rated pin rim. Delete
+   buttons should be a true red (distinct from the purple), not the old
+   brick red.
+4. Map should look noticeably calmer/lighter — fewer bold road colors,
+   more white space, subtle purple tint overall — not the old
+   yellow/orange-heavy standard OSM look.
+5. The **+** button's plus sign should look properly centered now, not
+   shifted.
+6. Re-test manual address entry with **"430 W 800 N, Orem, UT 84057"** —
+   check whether the candidate list now includes the actual right
+   location (should look meaningfully different from before, not the same
+   three wrong streets).
+7. Re-test **"5 Star BBQ"** search-by-name — if it's still empty, try the
+   Nominatim link above to see whether OpenStreetMap has this place at all
+   before assuming it's still our bug.
+
+### Open items still logged for later phases
+
+- Whatever comes out of this round's on-device test — new findings get
+  logged as Phase 7 follow-ups once reviewed.

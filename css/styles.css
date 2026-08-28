@@ -1,35 +1,46 @@
-/* Plate Ledger — design tokens (Phase 7 visual pass). One warm, food-forward
-   palette used everywhere below instead of one-off hex values: a brick-red
-   primary (matches the home-screen icon/theme-color), a gold accent for
-   ratings/"this one's great", and a warm cream neutral scale instead of
-   cold grays, so panels/cards/map all read as one coherent app rather than
-   a bare prototype. */
+/* Plate Ledger — design tokens.
+   Palette re-themed (2026-08-28, build 11) to the "Haunter" palette from
+   https://pokepalettes.com/#haunter: a deep plum primary with a light
+   lavender partner for gradients, a vivid orange-red accent (replaces the
+   old gold, used for ratings/highlights), and its own true-red danger
+   scale for destructive actions — separate from primary now that primary
+   is no longer red. Neutral grays/whites are cool-shifted (lavender-tinted)
+   to suit a purple-forward palette instead of the old warm cream scheme.
+   The "you are here" dot stays map-convention blue (js below) — that's a
+   universal map-UX color, not a brand color, and changing it risks reading
+   as another pin type. */
 :root {
-  --color-primary: #c0392b;
-  --color-primary-dark: #a5311f;
-  --color-primary-tint: #fdecea;
-  --color-gold: #e6a817;
+  --color-primary: #524162;
+  --color-primary-light: #ac6acd;
+  --color-primary-mid: #c58bcd;
+  --color-primary-tint: #d5a4de;
 
-  --color-bg-map: #f2efe9;
-  --color-bg-app: #faf6ee;
+  --color-accent: #de4a31;
+
+  --color-danger: #b41818;
+  --color-danger-dark: #6a0000;
+  --color-danger-tint: rgba(180, 24, 24, 0.09);
+
+  --color-bg-map: #ece6ee;
+  --color-bg-app: #f7f2f8;
   --color-surface: #ffffff;
-  --color-surface-alt: #f6f1e7;
+  --color-surface-alt: #f1e9f3;
 
-  --color-text: #2a2320;
-  --color-text-secondary: #6f645a;
-  --color-text-tertiary: #9c9186;
+  --color-text: #2c2233;
+  --color-text-secondary: #6b5b73;
+  --color-text-tertiary: #9c8ea3;
 
-  --color-border: #e7ded0;
-  --color-border-strong: #d8cbb6;
+  --color-border: #e4d9e6;
+  --color-border-strong: #d5d5d5;
 
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-pill: 999px;
 
-  --shadow-sm: 0 1px 3px rgba(60, 40, 20, 0.14);
-  --shadow-md: 0 4px 14px rgba(60, 40, 20, 0.18);
-  --shadow-lg: 0 -3px 20px rgba(60, 40, 20, 0.2);
+  --shadow-sm: 0 1px 3px rgba(40, 24, 48, 0.16);
+  --shadow-md: 0 4px 14px rgba(40, 24, 48, 0.22);
+  --shadow-lg: 0 -3px 20px rgba(40, 24, 48, 0.24);
 }
 
 html, body {
@@ -55,10 +66,9 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: var(--color-text);
   -webkit-tap-highlight-color: transparent;
-  /* Matches OSM tiles' typical land color, not pure white. If any sliver of
-     this ever shows through at an edge (e.g. during a brief native bounce
-     iOS's touchmove guard doesn't fully catch), it should blend with the
-     map instead of reading as an obvious white bar/flash. */
+  /* Loading/edge color behind the map tiles and the color-wash overlay
+     below — a soft lavender-gray so any sliver that shows through at an
+     edge blends in rather than reading as a stray white bar/flash. */
   background: var(--color-bg-map);
 }
 
@@ -123,6 +133,23 @@ body {
   background: var(--color-bg-map);
 }
 
+/* Build 11: the map itself was too road-heavy/generic in the stock OSM
+   style (js/app.js now loads CARTO's free Positron basemap instead, which
+   is far quieter). This is a purely cosmetic screen-space tint sitting
+   over the tiles — not a geographic overlay, doesn't pan/zoom with the
+   map, and never intercepts touches (pointer-events: none) — that washes
+   the light basemap gently toward the app's plum/lavender palette instead
+   of leaving it neutral gray. mix-blend-mode: multiply darkens+tints the
+   light tiles slightly without ever making roads/labels unreadable. */
+#map-color-wash {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  pointer-events: none;
+  background: linear-gradient(160deg, rgba(172, 106, 205, 0.12), rgba(82, 65, 98, 0.16));
+  mix-blend-mode: multiply;
+}
+
 /* Leaflet's own corner controls (zoom, attribution) sit inside #map and
    would otherwise render flush against the true screen edges on the sides
    that still have no padding (bottom/left/right) — nudge just those
@@ -179,13 +206,21 @@ body {
   z-index: 1000;
   width: 58px;
   height: 58px;
+  padding: 0;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(160deg, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(160deg, var(--color-primary-light), var(--color-primary));
   color: #fff;
   font-size: 30px;
   line-height: 1;
   box-shadow: var(--shadow-md);
+  /* The "+" glyph's own font metrics aren't perfectly centered in its em
+     box (varies by font/weight), so line-height alone left it visibly off
+     -center in a circular button. Flex-centering the text node fixes that
+     regardless of glyph metrics — same treatment as #locate-btn's SVG. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #list-toggle-btn {
@@ -210,20 +245,24 @@ body {
   z-index: 1000;
   width: 40px;
   height: 40px;
+  padding: 0;
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.96);
   color: var(--color-text);
   font-size: 17px;
   box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Jump-to-current-location (Phase 7): stacked directly above the Add FAB,
-   sharing its right-edge alignment. Neutral/gray glyph while no GPS fix has
-   arrived yet, switches to full brand color once PlateLedgerMap.userPosition
-   is available (js/app.js toggles .locate-btn-active); stays a dim,
-   still-tappable gray if geolocation failed outright, since we have no fix
-   to center on. */
+/* Jump-to-current-location: stacked directly above the Add FAB, sharing its
+   right-edge alignment. Neutral/gray glyph while no GPS fix has arrived
+   yet, switches to full brand color once PlateLedgerMap.userPosition is
+   available (js/app.js toggles .locate-btn-active); stays a dim, still-
+   tappable gray if geolocation failed outright, since we have no fix to
+   center on. */
 #locate-btn {
   position: fixed;
   right: calc(env(safe-area-inset-right) + 17px);
@@ -411,7 +450,7 @@ body {
 }
 
 .star-btn.star-filled {
-  color: var(--color-gold);
+  color: var(--color-accent);
 }
 
 .checkbox-list {
@@ -517,10 +556,10 @@ body {
 .delete-btn {
   width: 100%;
   padding: 13px;
-  border: 1px solid var(--color-primary);
+  border: 1px solid var(--color-danger);
   border-radius: var(--radius-sm);
-  background: var(--color-primary-tint);
-  color: var(--color-primary);
+  background: var(--color-danger-tint);
+  color: var(--color-danger);
   font-size: 15px;
   font-weight: 700;
   margin-top: 12px;
@@ -581,7 +620,7 @@ body {
 }
 
 .list-row-rating {
-  color: var(--color-gold);
+  color: var(--color-accent);
   font-size: 13px;
   letter-spacing: 0.5px;
 }
@@ -628,9 +667,9 @@ body {
 }
 
 .settings-btn.settings-danger {
-  background: var(--color-primary-tint);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: var(--color-danger-tint);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 /* --- Map pins --------------------------------------------------------------- */
@@ -653,7 +692,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(60, 40, 20, 0.4);
+  box-shadow: 0 2px 6px rgba(40, 24, 48, 0.45);
   box-sizing: border-box;
 }
 
@@ -672,9 +711,11 @@ body {
   color: #fff;
 }
 
-/* 4-5 stars get a gold rim so the best places stand out on a dense map. */
+/* 4-5 stars get an accent rim (vivid orange-red) so the best places stand
+   out on a dense map — same role gold used to play, now in the Haunter
+   palette's accent color. */
 .pl-pin-been.pl-pin-high {
-  border-color: var(--color-gold);
+  border-color: var(--color-accent);
 }
 
 /* "Want to Go" — hollow, no number. Deliberately quieter than a Been pin:
@@ -685,9 +726,11 @@ body {
   color: var(--color-primary);
 }
 
-/* Current-location dot. Deliberately not pin-shaped: it has to read as
-   "this is me", categorically different from a restaurant, at a glance —
-   same visual language as Apple/Google Maps. */
+/* Current-location dot. Deliberately not pin-shaped, and deliberately NOT
+   re-themed to the brand palette: it has to read as "this is me" using the
+   universal blue map-convention (Apple/Google Maps), categorically
+   different from a restaurant pin at a glance — recoloring it purple would
+   risk it being mistaken for a "Want to Go" pin. */
 
 .pl-userdot-icon {
   background: none;
@@ -829,7 +872,7 @@ body {
   padding: 10px 20px;
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-pill);
-  background: linear-gradient(160deg, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(160deg, var(--color-primary-light), var(--color-primary));
   color: #fff;
   font-size: 15px;
   font-weight: 700;
@@ -915,10 +958,10 @@ body {
   appearance: none;
 }
 
-/* Custom "x in a circle" clear button (Phase 7 — Austin asked for a visible
-   one-tap clear rather than relying on backspace, since the native iOS
-   search-input cancel button wasn't a reliable enough target). Shown only
-   once there's text to clear (toggled from js/list-settings.js). */
+/* Custom "x in a circle" clear button (Austin asked for a visible one-tap
+   clear rather than relying on backspace, since the native iOS search-
+   input cancel button wasn't a reliable enough target). Shown only once
+   there's text to clear (toggled from js/list-settings.js). */
 .search-clear-btn {
   position: absolute;
   right: 8px;

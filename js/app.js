@@ -79,10 +79,20 @@
     userPosition: null, // {lat, lng, accuracy}, once we have a fix
   };
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  // Build 11: the stock OSM raster style is heavily road/label-forward and
+  // reads as a bare road atlas rather than something "designed." Switched
+  // to CARTO's free, no-API-key-required Positron (light) basemap instead
+  // — much quieter, lets the app's own pins/UI carry the color instead of
+  // competing with the map for attention. (A CSS color-wash over this,
+  // css/styles.css's #map-color-wash, tints it toward the app's palette.)
+  // Still free/no-account, consistent with the original "no paid map
+  // provider" decision — see [[project_decisions]].
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
     maxZoom: 19,
+    subdomains: "abcd",
     attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors ' +
+      '&copy; <a href="https://carto.com/attributions">CARTO</a>',
   }).addTo(map);
 
   // Opening view: **the user's current location wins** (Austin's call,
