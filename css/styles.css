@@ -30,22 +30,27 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  /* Full-bleed: the map tiles render edge-to-edge, under the notch/Dynamic
-     Island and the home indicator, like Apple/Google Maps do. Previously
-     this had safe-area padding, which reserved a solid white strip at the
-     bottom. See the html/body background comment above for why this is a
-     warm off-white rather than pure white now, too. */
+  /* Bottom/left/right stay full-bleed under the home indicator, like
+     Apple/Google Maps. Top is the one edge that reserves safe-area space:
+     the status bar switched from black-translucent (full-bleed, but iOS
+     applies its own translucent blur/scrim over whatever's behind it — a
+     hazy top edge we can't control from CSS) to a solid "default" bar
+     (index.html), which fully covers that area regardless of our padding.
+     Reserving the space ourselves means our own background color shows
+     there instead of the map being pointlessly hidden behind it. */
+  padding-top: env(safe-area-inset-top);
+  box-sizing: border-box;
   background: #f2efe9;
 }
 
 /* Leaflet's own corner controls (zoom, attribution) sit inside #map and
-   would otherwise render flush against the true screen edges now that #map
-   has no padding — nudge just the control container corners in from the
-   safe area, without affecting the map tiles themselves. */
-.leaflet-control-container .leaflet-top {
-  top: env(safe-area-inset-top);
-}
-
+   would otherwise render flush against the true screen edges on the sides
+   that still have no padding (bottom/left/right) — nudge just those
+   control container corners in from the safe area, without affecting the
+   map tiles themselves. No .leaflet-top rule: #map's own padding-top
+   already reserves that space for the whole container, so a top-anchored
+   control (none currently exist — zoom moved to bottom-left, attribution
+   is bottom-right) would otherwise get double-inset. */
 .leaflet-control-container .leaflet-bottom {
   bottom: env(safe-area-inset-bottom);
 }

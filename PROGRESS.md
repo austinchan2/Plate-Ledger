@@ -416,3 +416,36 @@ trading full-bleed for a clean edge). Not changed pending his answer.
 cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
 git push
 ```
+
+### Top fade — switched to a solid status bar (2026-08-28)
+
+Austin's call on the top-fade trade-off: switch to a solid status bar
+rather than keep the full-bleed translucent look.
+
+- `index.html`: `apple-mobile-web-app-status-bar-style` changed from
+  `black-translucent` to `default` (opaque light bar, dark text — fits the
+  app's white/light theme better than `black` would).
+- `css/styles.css`: `#map` now reserves `padding-top:
+  env(safe-area-inset-top)` again (bottom/left/right stay full-bleed —
+  that's unrelated to this and already fixed). With a solid status bar,
+  iOS covers that region with an opaque rectangle regardless of our CSS, so
+  reserving the space ourselves means our own background color (the warm
+  off-white from the round-2 fix) shows there instead of map tiles being
+  pointlessly hidden behind it.
+- Removed the now-redundant `.leaflet-top` safe-area rule from the round-1
+  fix — no control currently anchors to a top corner (zoom is bottom-left,
+  attribution is bottom-right), and if one ever did, `#map`'s own
+  padding-top would already cover it; leaving both would have double-inset
+  it.
+
+**Exit criteria going forward:** no white/hazy strip at the top (should now
+be a clean, deliberate edge instead — a solid-colored status bar with the
+map starting right below it), no bar at the bottom on repeated taps.
+
+**This is build 4.**
+
+**Not pushed yet** — same as every phase, pushing is on Austin:
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
