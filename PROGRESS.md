@@ -319,3 +319,27 @@ Austin tested the first Phase 3 commit on-device:
 cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
 git push
 ```
+
+### Build version marker (2026-08-28)
+
+Austin asked for a small, unobtrusive way to confirm a given push actually
+reached his installed app, since there's no build pipeline or service
+worker here to guarantee that (GitHub Pages + iOS could both be showing him
+a stale cached copy with no visual cue that anything's wrong).
+
+Added `js/version.js` — `window.PLATE_LEDGER_BUILD = { number, builtAt }` —
+rendered as a tiny gray "build N · <time>" tag, bottom-center of the
+screen, `pointer-events: none` so it never intercepts a tap. It doesn't
+compete with any corner control (List/Settings/Add/zoom all live in the
+four corners; this sits in the empty gap between them).
+
+This build's number/time will be bumped on every future commit meant to
+reach Austin's phone (now baked into phase_delivery_workflow in project
+memory) — he doesn't need to ask again, just glance at the tag after
+reinstalling. This is **build 1**.
+
+**Not pushed yet** — same as every phase, pushing is on Austin:
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
