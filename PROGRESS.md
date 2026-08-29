@@ -1203,7 +1203,7 @@ git push
 
 No icon change this time, so no Home Screen re-add needed. Then check:
 
-1. Build tag reads **build 12**.
+1. Build tag reads **build 13**.
 2. Map should load clean now — no "API Key Required" watermark repeating
    across it.
 3. Any 4-5 star "Been" pin on the map should show a visible double-ring
@@ -1231,3 +1231,14 @@ No icon change this time, so no Home Screen re-add needed. Then check:
 ### Open items still logged for later phases
 
 - Whatever this round's test turns up.
+
+### Confirmed by Austin on device (2026-08-29)
+
+All of build 13 tested and approved as-is, no further changes requested:
+Esri map tiles (watermark gone), plate-rim double-ring accent on 4-5 star
+"Been" pins, the SVG-based FAB "+" (genuinely centered now), and the new
+map pin-drop fallback for setting a restaurant's exact location. No open
+items carried forward from this round.
+
+**Phase 7 (polish) is closed.** Austin will open a new chat with
+instructions for the next stage/features.
