@@ -273,4 +273,67 @@
 
   window.PlateLedgerMap.enterPickMode = enterPickMode;
   window.PlateLedgerMap.exitPickMode = exitPickMode;
+
+  // Phase 8: `?import=<url-or-coords>` query-param hand-off from the
+  // companion iOS Shortcut (see PROGRESS.md's Phase 8 section for the setup
+  // steps). The Shortcut expands a Google/Apple Maps share link itself
+  // (Shortcuts' own network access isn't subject to the browser CORS
+  // restriction this app's own JS runs under) and opens Plate Ledger with
+  // the resolved link/coordinates in this param, so sharing a place from
+  // Maps can land straight on the Add-restaurant confirm screen. Same
+  // parser (js/maps-import.js) as the in-form "paste from Maps" flow —
+  // it's the exact same kind of input, just arriving a different way.
+  function handleMapsImportParam() {
+    var params = new URLSearchParams(window.location.search);
+    var raw = params.get("import");
+    if (!raw) return;
+
+    // Strip it from the address bar immediately so refreshing the page (or
+    // a stale cached launch URL) doesn't re-trigger this every time.
+    params.delete("import");
+    var newSearch = params.toString();
+    var newUrl =
+      window.location.pathname + (newSearch ? "?" + newSearch : "") + window.location.hash;
+    window.history.replaceState({}, "", newUrl);
+
+    if (!window.PlateLedgerMapsImport || !window.PlateLedgerForm) return;
+    var parsed = window.PlateLedgerMapsImport.parse(raw);
+    if (!parsed.ok) {
+      // The Shortcut is expected to always hand off an already-expanded
+      // link, so this should be rare — surface it rather than silently
+      // dropping what was just shared.
+      alert(
+        parsed.reason === "short-link"
+          ? 'Couldn\u2019t read that Maps link automatically. Open Plate Ledger\u2019s Add screen and use "Or paste a Google/Apple Maps link" instead.'
+          : "Couldn't find a location in what was shared. Try adding this restaurant from the Add screen instead."
+      );
+      return;
+    }
+
+    function openWithLocation(address, town) {
+      window.PlateLedgerForm.openAdd({
+        name: parsed.name || "",
+        address: address,
+        town: town || "",
+        lat: parsed.lat,
+        lng: parsed.lng,
+      });
+    }
+
+    if (parsed.address) {
+      openWithLocation(parsed.address, "");
+      return;
+    }
+    if (window.PlateLedgerGeocode && window.PlateLedgerGeocode.reverseGeocode) {
+      window.PlateLedgerGeocode.reverseGeocode({ lat: parsed.lat, lng: parsed.lng }).then(
+        function (r) {
+          openWithLocation((r && r.displayName) || "Pinned from Maps link", r && r.town);
+        }
+      );
+    } else {
+      openWithLocation("Pinned from Maps link", "");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", handleMapsImportParam);
 })();

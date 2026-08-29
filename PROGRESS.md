@@ -1264,7 +1264,111 @@ the banner removal.
   feature from scratch. `js/version.js` and `css/styles.css`'s
   `#build-version-tag` rule are untouched.
 
-**This is build 14.**
+**Build 14 was folded into the same push as build 15 below** (Austin
+hadn't tested/pushed 14 yet when the share-link options came back
+picked), so there's one combined checklist further down rather than two
+separate ones.
+
+## Phase 8, continued — build 15 (2026-08-28/29): Maps share-link import
+
+Austin picked "paste & parse, plus a companion iOS Shortcut" from the
+three options reviewed (plain paste-only; paste-only plus an
+auto-expanding public CORS proxy; paste-only plus an iOS Shortcut
+hand-off) — the Shortcut route because it gets the closest thing to a
+real "Share → app" flow without taking on a third-party proxy dependency,
+which this project has already been burned by twice for map tiles (see
+[[build_environment_notes]]).
+
+- **New `js/maps-import.js` module.** Pure client-side text/URL parsing,
+  no network calls — `PlateLedgerMapsImport.parse(text)` reads:
+  - Google long share/place links (`.../maps/place/<name>/@<lat>,<lng>,<z>z/
+    data=...!3d<lat>!4d<lng>...`) — prefers the `!3d`/`!4d` pin coordinates
+    over the `@lat,lng` map-center coordinates when both are present, since
+    the map center is just wherever the screen happened to be panned/zoomed
+    when the link was made, not necessarily the pin itself.
+  - Google's official `?api=1&query=<lat>,<lng>` (or `&query=<name>`) links,
+    and the older bare `?q=`.
+  - Apple's new unified Maps URLs, iOS 18.4+ (`coordinate=`, `address=`,
+    `name=`) and the classic Maps URL scheme still widely generated
+    (`ll=`, `q=`, `address=`) — both handled, since which one a share
+    produces can depend on OS version.
+  - Plain `"lat, lng"` text (e.g. copied from a map app's info panel).
+  - Short links (`maps.app.goo.gl/...`, and Apple's `maps.apple/p/...` —
+    confirmed against Apple's own "Adopting unified Maps URLs" doc that a
+    shortened Apple Maps link's host always ends in `maps.apple` with no
+    `.com`, which is the one reliable way to tell it apart from a full
+    link) are flagged as `reason: "short-link"` rather than guessed at —
+    they're opaque codes with no coordinates in the URL itself; the real
+    destination only comes back as an HTTP redirect, which this app's own
+    JS can't follow cross-origin (CORS) from a static site with no
+    backend. That's exactly the gap the Shortcut below fills.
+- **"Or paste a Google/Apple Maps link" in the Add-restaurant address
+  step** (`js/restaurant-form.js`, next to the existing manual-address and
+  pin-drop links). Paste a link (or plain coordinates) and tap Import: if
+  it parses, this drops straight into the same "confirmed" address screen
+  the search/pin-drop flows use, doing a reverse-geocode lookup first
+  (new `PlateLedgerGeocode.reverseGeocode()` in js/geocode.js, same
+  Nominatim endpoint the rest of the app already uses) to turn bare
+  coordinates into a real address/town — falling back to "Pinned from
+  Maps link" as the address text if that lookup fails, same spirit as the
+  existing pin-drop fallback. If what's pasted is a short link, the
+  screen explains that plainly and offers an "Open the link to expand it"
+  button (opens it in Safari) so Austin can copy the resulting full URL
+  and paste that instead — the fallback path when the Shortcut below
+  isn't set up or isn't being used for a given restaurant.
+- **`?import=<link-or-coords>` URL hand-off** (`js/app.js`): on load, if
+  the page URL carries an `import` query parameter, it's run through the
+  same parser and opens the Add-restaurant form pre-filled (reverse-
+  geocoding first, same as the in-form flow), then the parameter is
+  stripped from the address bar so a refresh doesn't reopen it. This is
+  what the companion iOS Shortcut below hands off to.
+
+### Companion iOS Shortcut (Austin sets this up once, outside the app)
+
+This is what makes a short Google/Apple Maps share link a **one-tap**
+import instead of the manual "open it, copy the expanded URL, paste it
+back in" flow above: Shortcuts has full on-device network access (unlike
+this app's own JS, which hits CORS on a cross-origin redirect), so it can
+expand a short link itself before ever handing anything to Plate Ledger.
+
+In the **Shortcuts** app, create a new shortcut named something like
+"Add to Plate Ledger":
+
+1. **Receive input:** with the shortcut open, tap the settings (ⓘ) icon →
+   turn on **"Show in Share Sheet"** → set **"Share Sheet Types"** to
+   **URLs** (this is what makes it appear when you tap Share from Google
+   Maps or Apple Maps).
+2. Add action **"Expand URL"** (search for "Expand" in the action
+   picker) — feed it the Shortcut Input (the shared link). This resolves
+   a short link (`maps.app.goo.gl/...`, `maps.apple/p/...`) to its full
+   destination URL; for a link that's already long-form, it just passes
+   through unchanged.
+3. Add action **"URL Encode"** (Text category) on the expanded URL's
+   result, so it's safe to embed in another URL's query string.
+4. Add action **"Text"**, and set its content to:
+   `https://austinchan2.github.io/Plate-Ledger/?import=` followed by the
+   URL-encoded result from step 3 (insert it as a variable into the Text
+   field — don't retype it).
+5. Add action **"Open URLs"** on that combined text.
+
+Save it. Then from Google Maps or Apple Maps: open a restaurant, tap
+**Share**, scroll the row of apps/shortcuts and find **"Add to Plate
+Ledger"** (may be under "More" the first time — iOS lets you pin it
+after that). It should open Plate Ledger with the Add-restaurant screen
+already showing that location, ready to confirm and fill in the rest.
+
+**Known limitation, worth trying rather than assuming:** "Open URLs"
+generally opens a link in Safari, not necessarily inside the installed
+Home Screen app even though Plate Ledger is added there — the exact
+behavior can depend on iOS version and hasn't been verified on Austin's
+phone from this session (no way to test the Shortcuts app itself from
+here). Functionally it's the same either way (same code, same data), so
+worst case it opens as a Safari tab instead of feeling like "the app" —
+report back what actually happens and this can be adjusted if it's
+worth chasing further.
+
+**This is build 15** (folds in build 14's build-tag removal too — see
+above).
 
 ### Your turn — push, then test on your phone
 
@@ -1276,15 +1380,31 @@ git push
 No icon change, so no Home Screen re-add needed. Then check:
 
 1. The small "build N · ..." tag that used to sit bottom-center of the
-   screen should be gone.
-2. Everything else should look and behave exactly as build 13 did — map,
-   pins, list, filters, detail sheet, Directions, add/edit flow (including
-   the pin-drop location picker), Settings. This build touched nothing
-   else, so a quick spot-check is enough.
+   screen should be gone (build 14's change).
+2. Add or edit a restaurant, get to the address step, and look for a new
+   link: **"Or paste a Google/Apple Maps link."** Tap it — a text box and
+   an "Import" button should appear.
+3. Try a **long** Google Maps link (share a place from the Google Maps
+   app, or copy a `google.com/maps/place/...` URL) — Import should land
+   you on the confirmed-address screen with a real address filled in.
+4. Try a **long** Apple Maps link the same way.
+5. Try a **short** link (`maps.app.goo.gl/...` from Google Maps' Share,
+   or `maps.apple/p/...` from Apple Maps' Share) pasted directly — you
+   should see the "that's a shortened link" message with an "Open the
+   link to expand it" button, not a silent failure or a wrong location.
+6. Try just typing/pasting plain coordinates like `40.2765, -111.7132` —
+   should also import and reverse-geocode to a real address.
+7. Set up the companion iOS Shortcut above, then try sharing a restaurant
+   straight from Google Maps or Apple Maps' Share Sheet and confirm it
+   opens Plate Ledger with that location pre-filled. Report back exactly
+   what you see (Safari tab vs. the installed app) per the "known
+   limitation" note above.
+8. Sanity-check nothing else regressed: search-by-name and manual-address
+   entry (the other two address-step options) still work, and the
+   existing "set the exact spot on the map" pin-drop is still there too.
 
 ### Open items still logged for later phases
 
-- Google/Apple Maps share-link import for adding a restaurant — approach
-  to be picked from the options reviewed with Austin, then built as its
-  own follow-up.
+- Whatever this round's test (including the Shortcut's actual behavior on
+  Austin's phone) turns up.
 

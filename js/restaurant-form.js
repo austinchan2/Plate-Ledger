@@ -223,6 +223,8 @@ var PlateLedgerForm = (function () {
         renderConfirmed();
       } else if (mode === "manual") {
         renderManual();
+      } else if (mode === "paste") {
+        renderPaste();
       } else {
         renderSearch();
       }
@@ -322,9 +324,105 @@ var PlateLedgerForm = (function () {
         render();
       };
       body.appendChild(manualLink);
+      var pasteLink = el("button", { type: "button", text: "Or paste a Google/Apple Maps link", class: "link-btn" });
+      pasteLink.onclick = function () {
+        mode = "paste";
+        render();
+      };
+      body.appendChild(pasteLink);
       var pinLink = el("button", { type: "button", text: "Or set the exact spot on the map", class: "link-btn" });
       pinLink.onclick = openPinPicker;
       body.appendChild(pinLink);
+    }
+
+    // Phase 8: "port over" a restaurant Nominatim can't find by name — paste
+    // a share link (or plain "lat, lng") straight from the Maps app instead
+    // of typing an address. See js/maps-import.js for exactly which link
+    // shapes this can read directly vs. which need expanding first (short
+    // links), and PROGRESS.md's Phase 8 section for the companion iOS
+    // Shortcut that can do that expansion automatically.
+    function applyParsedLocation(parsed) {
+      working.lat = parsed.lat;
+      working.lng = parsed.lng;
+      if (parsed.name && !working.name) {
+        working.name = parsed.name;
+        if (typeof onNameAutofill === "function") onNameAutofill(working.name);
+      }
+      mode = "confirmed";
+      render();
+    }
+
+    function renderPaste() {
+      var textarea = el("textarea", {
+        class: "textarea-input",
+        rows: "3",
+        placeholder: 'Paste a Google Maps or Apple Maps link, or "lat, lng"',
+      });
+      var statusWrap = el("div", { class: "search-status" });
+
+      function setStatus(text, extraEl) {
+        statusWrap.innerHTML = "";
+        if (text) statusWrap.appendChild(el("div", { text: text }));
+        if (extraEl) statusWrap.appendChild(extraEl);
+      }
+
+      var importBtn = el("button", { type: "button", text: "Import", class: "small-btn" });
+      importBtn.onclick = function () {
+        var text = textarea.value.trim();
+        if (!text) {
+          setStatus("Paste a link first.");
+          return;
+        }
+        var parsed = PlateLedgerMapsImport.parse(text);
+        if (!parsed.ok) {
+          if (parsed.reason === "short-link") {
+            var openLink = el("a", {
+              href: parsed.url,
+              target: "_blank",
+              rel: "noopener",
+              text: "Open the link to expand it",
+              class: "link-btn",
+            });
+            setStatus(
+              "That's a shortened link \u2014 it doesn't have the location in it directly. Open it once (below) to expand it, then copy the full address-bar URL it lands on and paste that here instead.",
+              openLink
+            );
+          } else {
+            setStatus('Couldn\u2019t find a location in that. Paste the full Google/Apple Maps link, or just "lat, lng".');
+          }
+          return;
+        }
+        // Apple links sometimes carry a real address string directly; Google
+        // links never do, so those (and Apple links without one) need a
+        // reverse-geocode lookup to get a human address/town instead of just
+        // raw coordinates.
+        if (parsed.address) {
+          working.address = parsed.address;
+          applyParsedLocation(parsed);
+          return;
+        }
+        setStatus("Looking up the address\u2026");
+        PlateLedgerGeocode.reverseGeocode({ lat: parsed.lat, lng: parsed.lng })
+          .then(function (r) {
+            working.address = (r && r.displayName) || "Pinned from Maps link";
+            working.town = (r && r.town) || "";
+            applyParsedLocation(parsed);
+          })
+          .catch(function () {
+            working.address = "Pinned from Maps link";
+            applyParsedLocation(parsed);
+          });
+      };
+
+      body.appendChild(textarea);
+      body.appendChild(importBtn);
+      body.appendChild(statusWrap);
+      var searchLink = el("button", { type: "button", text: "Search by name instead", class: "link-btn" });
+      searchLink.onclick = function () {
+        mode = "search";
+        render();
+      };
+      body.appendChild(searchLink);
     }
 
     function renderManual() {
@@ -442,7 +540,14 @@ var PlateLedgerForm = (function () {
     ]);
   }
 
-  function openForm(existingRecord) {
+  // Phase 8: `prefill` lets a caller (the in-form "paste from Maps" flow's
+  // sibling entry point, or the `?import=` URL hand-off from the companion
+  // iOS Shortcut in js/app.js) open a *new* restaurant already populated
+  // with a name/address/lat/lng, landing straight on the "confirmed"
+  // address screen instead of "search" — same effect as picking a search
+  // result, just from a different source. Only applies when adding
+  // (existingRecord is null); an edit always starts from the saved record.
+  function openForm(existingRecord, prefill) {
     closeForm();
 
     var isEdit = !!existingRecord;
@@ -472,7 +577,7 @@ var PlateLedgerForm = (function () {
         noiseLevel: null,
         websiteUrl: "",
       },
-      existingRecord || {}
+      existingRecord || prefill || {}
     );
     // Work on independent copies of array fields so cancelling never mutates
     // the caller's record.
@@ -550,8 +655,10 @@ var PlateLedgerForm = (function () {
   }
 
   return {
-    openAdd: function () {
-      openForm(null);
+    // `prefill` (optional): { name, address, town, lat, lng } — see the
+    // comment on openForm() above.
+    openAdd: function (prefill) {
+      openForm(null, prefill);
     },
     openEdit: function (record) {
       openForm(record);

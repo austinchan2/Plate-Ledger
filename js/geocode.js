@@ -67,14 +67,17 @@ var PlateLedgerGeocode = (function () {
     };
   }
 
-  function request(params) {
+  // Phase 8: takes an explicit `path` ("/search" or "/reverse") now that the
+  // share-link import flow needs the reverse-geocode endpoint too, not just
+  // forward search — same request plumbing either way.
+  function request(path, params) {
     var query = Object.assign({ format: "jsonv2", addressdetails: "1" }, params);
     var qs = Object.keys(query)
       .map(function (k) {
         return encodeURIComponent(k) + "=" + encodeURIComponent(query[k]);
       })
       .join("&");
-    return fetch(BASE_URL + "/search?" + qs, {
+    return fetch(BASE_URL + path + "?" + qs, {
       headers: { Accept: "application/json" },
     }).then(function (res) {
       if (!res.ok) throw new Error("Nominatim request failed: " + res.status);
@@ -110,13 +113,13 @@ var PlateLedgerGeocode = (function () {
     var bias = biasParams(opts.near);
     var poiParams = Object.assign({ q: q, limit: "8", layer: "poi" }, bias);
 
-    return request(poiParams).then(function (results) {
+    return request("/search", poiParams).then(function (results) {
       if (results.length) return results.map(normalizeResult);
       // POI-layer filter came back empty — retry unrestricted rather than
       // tell Austin "no matches" when a real place just wasn't tagged in a
       // way the layer filter caught.
       var openParams = Object.assign({ q: q, limit: "8" }, bias);
-      return request(openParams).then(function (fallback) {
+      return request("/search", openParams).then(function (fallback) {
         return fallback.map(normalizeResult);
       });
     });
@@ -224,15 +227,39 @@ var PlateLedgerGeocode = (function () {
     if (!structured) return freeText();
 
     var structuredParams = Object.assign({ limit: "3" }, structured, bias);
-    return request(structuredParams).then(function (results) {
+    return request("/search", structuredParams).then(function (results) {
       if (results.length) return results.map(normalizeResult);
       return freeText();
     });
   }
 
+  // Phase 8: reverse-geocode a coordinate pair into a human address/town,
+  // for the share-link import flow (js/maps-import.js parses a link down to
+  // lat/lng only — Apple links sometimes also carry a real address, but
+  // Google's never do) — same fallback shape as normalizeResult() above, so
+  // the caller can treat this exactly like a forward-search result. Resolves
+  // to null (never rejects) on any failure — Nominatim returns
+  // {"error": "..."} rather than an HTTP error for an unresolvable point, and
+  // the caller has its own placeholder text ("Pinned from Maps link") for
+  // when this comes back empty either way.
+  function reverseGeocode(coords) {
+    if (!coords || typeof coords.lat !== "number" || typeof coords.lng !== "number") {
+      return Promise.resolve(null);
+    }
+    return request("/reverse", { lat: coords.lat, lon: coords.lng })
+      .then(function (raw) {
+        if (!raw || raw.error) return null;
+        return normalizeResult(raw);
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
   return {
     searchPlaces: searchPlaces,
     geocodeAddress: geocodeAddress,
+    reverseGeocode: reverseGeocode,
     // exposed for debugging/testing only — not used elsewhere in the app.
     _parseAddressComponents: parseAddressComponents,
   };
