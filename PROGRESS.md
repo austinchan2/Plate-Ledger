@@ -1129,3 +1129,105 @@ your Home Screen and re-add it from Safari**. After that:
 
 - Whatever comes out of this round's on-device test — new findings get
   logged as Phase 7 follow-ups once reviewed.
+
+### Build 13 — icon-matched pins, real tile fix, robust + icon, manual pin-drop (2026-08-28)
+
+Note first: **build 12 was Austin's own commit**, done separately from
+this chat — he replaced the app icon with a new "Plate & Pin" shape (a
+plate viewed at an angle, rim visible as a ring, on a pin-style marker
+foot; "H1 / Deep Haunter" colorway) and fixed a version-marker gap left
+over from build 11. This session's work picks up as **build 13**, not 12,
+to avoid colliding with that commit. See its own message
+(`git log`, commit `bebf3c2`) for the full detail on the icon choice.
+
+Austin reported back on build 11's results with build 12's new icon
+already in place: colors and map style approved, but four things needed
+another pass.
+
+- **Map pins now echo the icon's plate-rim rings.** High-rated (4-5 star)
+  "Been" pins get a genuine concentric ring treatment (`css/styles.css`,
+  layered `box-shadow` rings around `.pl-pin-been.pl-pin-high`) instead of
+  just a recolored single border — an echo of the "Plate & Pin" icon's rim
+  rings, reserved for the pins that are already meant to stand out. Didn't
+  rebuild the pin's base teardrop shape into a true circle+tail to chase
+  the icon's rounder silhouette exactly — the rotated-square-with-3-round-
+  corners construction is the standard, robust way to get a bordered
+  map-pin shape in CSS (a separate circle + pointer element runs into real
+  border/shadow seam problems at the join), and at the 30px size these
+  render on the map the two constructions are close to indistinguishable.
+  Said so rather than silently doing a partial job.
+- **CARTO map tiles were showing a repeating "API Key Required"
+  watermark** — their anonymous free tier apparently changed terms since
+  build 11 (worth remembering: this is the *second* free/no-key tile host
+  to break on us). Switched to Esri's "Light Gray Canvas" basemap
+  (`js/app.js`) — base layer + a separate label/reference layer stacked on
+  top, which is how Esri's own docs say to use it — same quiet, minimal
+  look, genuinely free with no signup at this volume. If this one also
+  breaks down the line, the durable fix is a real free-tier API key from
+  one provider (MapTiler/Stadia/Esri), not a fourth anonymous host.
+- **Add-button (+) — actually fixed this time.** Flex-centering a text "+"
+  character (build 11's fix) wasn't enough, because a font glyph's own ink
+  isn't guaranteed to sit centered in its line box regardless of how the
+  box itself is centered. Replaced the text character with a small
+  hand-built SVG plus sign (`js/list-settings.js`) — exact, centered
+  geometry, no font metrics involved at all. Same approach `#locate-btn`'s
+  icon already used successfully.
+- **Manual address entry / "70 N Geneva Rd" — root-caused, and it's a data
+  limit, not a bug we can query our way around.** The structured-query fix
+  from build 11 should be working correctly (verified its parsing output
+  offline again), but Austin's retest of "70 N Geneva Rd" only resolved to
+  the *street* ("Geneva Road, Orem, Utah") with no house number — that's
+  what Nominatim returns when OpenStreetMap has the road but no address
+  point for that specific building, which no amount of query tuning can
+  manufacture. Rather than keep guessing at a fourth geocoding fix, added
+  the fallback every real map app has for exactly this: **"set the exact
+  spot on the map"**, offered from both the search and manual-address
+  flows. It hides the form, drops a fixed crosshair pin at screen center,
+  and lets Austin pan the real map underneath it (drag-the-map-not-the-pin
+  — the same precise, standard pattern Google Maps/Uber use for a location
+  picker) until it's exactly right, then "Use this location" reads the
+  map's center coordinates straight in. No geocoding involved at all for
+  this path, so it can't be wrong the way a geocoder can. The Add/List/
+  Settings buttons are hidden for the moment (`body.pl-picking-location`)
+  so there's no way to accidentally open a second form mid-pick and corrupt
+  the flow.
+
+**This is build 13.**
+
+### Your turn — push, then test on your phone
+
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+
+No icon change this time, so no Home Screen re-add needed. Then check:
+
+1. Build tag reads **build 12**.
+2. Map should load clean now — no "API Key Required" watermark repeating
+   across it.
+3. Any 4-5 star "Been" pin on the map should show a visible double-ring
+   (bullseye) accent around it, not just a plain colored border.
+4. The **+** button's plus sign should now look genuinely centered — this
+   was a real fix (SVG icon, not a font tweak), so it should be resolved,
+   not just nudged.
+5. Add or edit a restaurant, get to the address step, and look for a new
+   link: **"Or set the exact spot on the map"** (search flow) / **"None
+   of these right? Set the exact spot on the map"** (manual-entry flow,
+   after a lookup). Tap it — the form should disappear, a banner should
+   appear at the top ("Pan the map to position the pin") with a crosshair
+   pin fixed at screen center, and panning/zooming the map underneath
+   should let you position it precisely. Tap "Use this location" and
+   confirm it drops you back into the form with that address confirmed.
+   Try "Cancel" too, and confirm it just returns you to the form
+   unchanged.
+6. Try this pin-drop specifically for "70 N Geneva Rd" (5 Star BBQ) and
+   "430 W 800 N" (or any address that's been resolving wrong/imprecise) —
+   this should now be the reliable path for those, independent of whatever
+   Nominatim does or doesn't have mapped.
+7. Sanity-check nothing else regressed: other pins (non-high-rated Been,
+   Want to Go), list, filters, detail sheet, Directions, Settings.
+
+### Open items still logged for later phases
+
+- Whatever this round's test turns up.

@@ -79,21 +79,30 @@
     userPosition: null, // {lat, lng, accuracy}, once we have a fix
   };
 
-  // Build 11: the stock OSM raster style is heavily road/label-forward and
-  // reads as a bare road atlas rather than something "designed." Switched
-  // to CARTO's free, no-API-key-required Positron (light) basemap instead
-  // — much quieter, lets the app's own pins/UI carry the color instead of
-  // competing with the map for attention. (A CSS color-wash over this,
-  // css/styles.css's #map-color-wash, tints it toward the app's palette.)
-  // Still free/no-account, consistent with the original "no paid map
-  // provider" decision — see [[project_decisions]].
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-    maxZoom: 19,
-    subdomains: "abcd",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors ' +
-      '&copy; <a href="https://carto.com/attributions">CARTO</a>',
-  }).addTo(map);
+  // Build 11 switched from stock OSM raster tiles (road/label-heavy) to
+  // CARTO's Positron basemap for a quieter look. Build 12: CARTO's
+  // anonymous free tier started stamping tiles with a repeating
+  // "API Key Required" watermark — their no-signup access apparently
+  // changed since build 11. Switched again, to Esri's "Light Gray Canvas"
+  // basemap (basemap layer + a separate label/reference layer on top,
+  // which is how Esri's own docs say to use it) — same quiet, minimal
+  // aesthetic, genuinely free with no key/signup for this volume of use.
+  // Still worth knowing: this is the *second* "free, no key required" tile
+  // host to change terms on us — if this one also breaks, the durable fix
+  // is a real API key from a provider with a stable free tier (MapTiler,
+  // Stadia, Esri's own developer account), not a third anonymous host.
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+    {
+      maxZoom: 16,
+      attribution:
+        "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ",
+    }
+  ).addTo(map);
+  L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 16, pane: "overlayPane" }
+  ).addTo(map);
 
   // Opening view: **the user's current location wins** (Austin's call,
   // 2026-08-28). He'll have restaurants saved all over the place, so an
@@ -185,4 +194,79 @@
   }
 
   document.addEventListener("DOMContentLoaded", buildLocateButton);
+
+  // Build 12: manual "tap/pan the map to set the location" fallback for
+  // addresses geocoding can't resolve precisely — see js/restaurant-form.js
+  // for where this is offered. Uses the classic "drag the map under a fixed
+  // crosshair" pattern (Google Maps' / Uber's drop-pin picker) rather than
+  // tap-anywhere: much more precise on a small touchscreen (you can pinch-
+  // zoom in first and nudge the map under your thumb, instead of trying to
+  // land a fingertip exactly on target), and it needs no new map click
+  // listener at all — the picked point is just map.getCenter() when
+  // confirmed, so it can't conflict with the existing pin-click/map-click
+  // handlers in js/map-pins.js.
+  var pickBanner = null;
+  var pickCrosshair = null;
+
+  var CROSSHAIR_PIN_SVG =
+    '<svg width="34" height="44" viewBox="0 0 34 44" fill="none">' +
+    '<path d="M17 2c8.284 0 15 6.716 15 15 0 10-15 25-15 25S2 27 2 17C2 8.716 8.716 2 17 2z" ' +
+    'fill="currentColor" stroke="#fff" stroke-width="2"/>' +
+    '<circle cx="17" cy="17" r="5.5" fill="#fff"/>' +
+    "</svg>";
+
+  function enterPickMode(onPick, onCancel) {
+    if (pickBanner) exitPickMode(); // guard against double-entry
+
+    // Hide the other top-level entry points (Add/List/Settings) for the
+    // duration: tapping Add while mid-pick would open a second, unrelated
+    // form overlay on top of the map/banner and orphan this pick flow's
+    // eventual callback against the wrong form. Simplest fix is to make
+    // that combination unreachable rather than handle it after the fact.
+    document.body.classList.add("pl-picking-location");
+
+    pickCrosshair = document.createElement("div");
+    pickCrosshair.id = "pick-location-crosshair";
+    pickCrosshair.innerHTML = CROSSHAIR_PIN_SVG;
+    document.body.appendChild(pickCrosshair);
+
+    pickBanner = document.createElement("div");
+    pickBanner.id = "pick-location-banner";
+    var text = document.createElement("div");
+    text.className = "pick-location-text";
+    text.textContent = "Pan the map to position the pin";
+    var cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "pick-location-cancel";
+    cancelBtn.textContent = "Cancel";
+    var confirmBtn = document.createElement("button");
+    confirmBtn.type = "button";
+    confirmBtn.className = "pick-location-confirm";
+    confirmBtn.textContent = "Use this location";
+    pickBanner.appendChild(text);
+    pickBanner.appendChild(cancelBtn);
+    pickBanner.appendChild(confirmBtn);
+    document.body.appendChild(pickBanner);
+
+    cancelBtn.onclick = function () {
+      exitPickMode();
+      if (onCancel) onCancel();
+    };
+    confirmBtn.onclick = function () {
+      var center = map.getCenter();
+      exitPickMode();
+      onPick({ lat: center.lat, lng: center.lng });
+    };
+  }
+
+  function exitPickMode() {
+    document.body.classList.remove("pl-picking-location");
+    if (pickBanner && pickBanner.parentNode) pickBanner.parentNode.removeChild(pickBanner);
+    if (pickCrosshair && pickCrosshair.parentNode) pickCrosshair.parentNode.removeChild(pickCrosshair);
+    pickBanner = null;
+    pickCrosshair = null;
+  }
+
+  window.PlateLedgerMap.enterPickMode = enterPickMode;
+  window.PlateLedgerMap.exitPickMode = exitPickMode;
 })();

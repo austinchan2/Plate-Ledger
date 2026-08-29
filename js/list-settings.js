@@ -581,7 +581,18 @@
       settingsPanel.style.display = settingsPanel.style.display === "none" ? "flex" : "none";
     };
 
-    var addBtn = el("button", { type: "button", text: "+", id: "add-fab-btn" });
+    var addBtn = el("button", { type: "button", id: "add-fab-btn" });
+    addBtn.setAttribute("aria-label", "Add restaurant");
+    // A hand-drawn SVG "+" instead of a text glyph — a font character's own
+    // ink isn't reliably centered in its em box (varies by font/weight), so
+    // relying on line-height/flex-centering text alone left this looking
+    // subtly off-center. An SVG's own geometry is centered by us, exactly,
+    // regardless of any font — same approach #locate-btn's icon already
+    // uses successfully.
+    addBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" ' +
+      'stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line>' +
+      '<line x1="5" y1="12" x2="19" y2="12"></line></svg>';
     addBtn.onclick = function () {
       PlateLedgerForm.openAdd();
     };

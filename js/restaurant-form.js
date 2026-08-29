@@ -228,6 +228,33 @@ var PlateLedgerForm = (function () {
       }
     }
 
+    // Build 12: manual "pan the map to set the location" fallback. Real-world
+    // cases this exists for: Nominatim geocoding a grid-numbered Utah address
+    // to the wrong block, or only resolving down to street level (no exact
+    // house-number point in OSM's data) rather than the specific building —
+    // both genuine data-precision limits, not something a better query can
+    // always work around. Hides the form so the real map underneath is
+    // tappable/pannable, then restores it with the picked coordinates filled
+    // in (or unchanged, on cancel).
+    function openPinPicker() {
+      if (!window.PlateLedgerMap || !window.PlateLedgerMap.enterPickMode) return;
+      if (!overlayEl) return;
+      overlayEl.style.display = "none";
+      window.PlateLedgerMap.enterPickMode(
+        function (coords) {
+          working.lat = coords.lat;
+          working.lng = coords.lng;
+          if (!working.address) working.address = "Pinned location";
+          overlayEl.style.display = "flex";
+          mode = "confirmed";
+          render();
+        },
+        function () {
+          overlayEl.style.display = "flex";
+        }
+      );
+    }
+
     function renderConfirmed() {
       body.appendChild(
         el("div", { class: "address-confirmed" }, [
@@ -295,6 +322,9 @@ var PlateLedgerForm = (function () {
         render();
       };
       body.appendChild(manualLink);
+      var pinLink = el("button", { type: "button", text: "Or set the exact spot on the map", class: "link-btn" });
+      pinLink.onclick = openPinPicker;
+      body.appendChild(pinLink);
     }
 
     function renderManual() {
@@ -355,6 +385,9 @@ var PlateLedgerForm = (function () {
         render();
       };
       body.appendChild(searchLink);
+      var pinLink = el("button", { type: "button", text: "None of these right? Set the exact spot on the map", class: "link-btn" });
+      pinLink.onclick = openPinPicker;
+      body.appendChild(pinLink);
     }
 
     var onNameAutofill = null;
