@@ -1242,3 +1242,49 @@ items carried forward from this round.
 
 **Phase 7 (polish) is closed.** Austin will open a new chat with
 instructions for the next stage/features.
+
+---
+
+## Phase 8 — build 14 (2026-08-28/29)
+
+Austin opened Phase 8 with two requests: drop the build-version tag from
+the bottom of the screen (it did its job getting builds 10-13 verified
+reliably; he's fine dropping it for now and can ask for it back if a
+future build needs the same on-device confirmation), and a way to quickly
+add a restaurant from a Google Maps / Apple Maps share link instead of
+typing it in by hand. The share-link import is being scoped as a
+follow-up build (options for how to implement it were reviewed with
+Austin separately, before writing any of that code) — this build is just
+the banner removal.
+
+- **Build-version tag turned off, not deleted.** `js/app.js` now gates its
+  creation behind `var SHOW_BUILD_TAG = false;` right above the existing
+  block — flipping that one line back to `true` is the entire "bring it
+  back" story if a later phase needs it, no need to reconstruct the
+  feature from scratch. `js/version.js` and `css/styles.css`'s
+  `#build-version-tag` rule are untouched.
+
+**This is build 14.**
+
+### Your turn — push, then test on your phone
+
+```
+cd "/Users/austinpeterson/Documents/Claude Projects/Local Restaurant Map"
+git push
+```
+
+No icon change, so no Home Screen re-add needed. Then check:
+
+1. The small "build N · ..." tag that used to sit bottom-center of the
+   screen should be gone.
+2. Everything else should look and behave exactly as build 13 did — map,
+   pins, list, filters, detail sheet, Directions, add/edit flow (including
+   the pin-drop location picker), Settings. This build touched nothing
+   else, so a quick spot-check is enough.
+
+### Open items still logged for later phases
+
+- Google/Apple Maps share-link import for adding a restaurant — approach
+  to be picked from the options reviewed with Austin, then built as its
+  own follow-up.
+

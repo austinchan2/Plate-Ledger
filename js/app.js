@@ -40,7 +40,11 @@
 
   // Small unobtrusive build marker (js/version.js) so Austin can glance at
   // the installed app and confirm a given push actually reached his phone.
-  if (window.PLATE_LEDGER_BUILD) {
+  // Phase 8 (build 14): turned off now that builds have been landing
+  // reliably — flip SHOW_BUILD_TAG back to true (no other change needed)
+  // if a future round of testing needs it again.
+  var SHOW_BUILD_TAG = false;
+  if (SHOW_BUILD_TAG && window.PLATE_LEDGER_BUILD) {
     var buildTag = document.createElement("div");
     buildTag.id = "build-version-tag";
     buildTag.textContent =
