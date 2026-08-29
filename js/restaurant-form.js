@@ -540,13 +540,27 @@ var PlateLedgerForm = (function () {
     ]);
   }
 
-  // Phase 8: `prefill` lets a caller (the in-form "paste from Maps" flow's
-  // sibling entry point, or the `?import=` URL hand-off from the companion
-  // iOS Shortcut in js/app.js) open a *new* restaurant already populated
-  // with a name/address/lat/lng, landing straight on the "confirmed"
-  // address screen instead of "search" — same effect as picking a search
-  // result, just from a different source. Only applies when adding
-  // (existingRecord is null); an edit always starts from the saved record.
+  // Phase 8: `prefill` lets a caller open a *new* restaurant already
+  // populated with a name/address/lat/lng, landing straight on the
+  // "confirmed" address screen instead of "search" — same effect as
+  // picking a search result, just from a different source. Only applies
+  // when adding (existingRecord is null); an edit always starts from the
+  // saved record.
+  //
+  // Nothing calls this with a real prefill today — it was built for a
+  // ?import=<link> URL hand-off from a companion iOS Shortcut, which
+  // turned out to be a dead end: Apple treats a Home Screen "standalone"
+  // web app and Safari as separate storage containers for the *same*
+  // origin (confirmed as intended WebKit behavior, not a bug — see
+  // [[build_environment_notes]]), so nothing opened from outside the app
+  // (a Shortcut's "Open URLs", a Share Sheet, another app) can ever land
+  // inside the already-installed app's own storage. That's specific to
+  // routing a URL in from *outside* the app, though — this openAdd(prefill)
+  // parameter itself doesn't care where the data came from, so it's kept
+  // as-is for whatever a future native-app rewrite ends up using to hand a
+  // shared place to this same form code (a Share Extension writing to an
+  // App Group container the WebView can read, for instance, wouldn't hit
+  // this limitation the way a external URL open does).
   function openForm(existingRecord, prefill) {
     closeForm();
 

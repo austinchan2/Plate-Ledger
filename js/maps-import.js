@@ -1,7 +1,6 @@
-// Plate Ledger — Phase 8: parse a pasted (or Shortcut-forwarded) Google Maps
-// / Apple Maps share link, or raw "lat, lng" text, into a name + coordinates
-// for the Add-restaurant form's "Paste from Maps" flow (js/restaurant-form.js)
-// and the `?import=` URL hand-off from the companion iOS Shortcut (js/app.js).
+// Plate Ledger — Phase 8: parse a pasted Google Maps / Apple Maps share
+// link, or raw "lat, lng" text, into a name + coordinates for the
+// Add-restaurant form's "Paste from Maps" flow (js/restaurant-form.js).
 //
 // Pure client-side text/URL parsing only — no network calls in this file.
 // Real-world constraint this is built around: a *shortened* share link
@@ -11,10 +10,20 @@
 // origin redirect and read where it landed (CORS) from a static site with
 // no backend of its own. Long-form links (the ones with @lat,lng or
 // coordinate=/ll= already in them) don't have that problem, which is what
-// this module actually extracts from. The companion iOS Shortcut handles
-// the short-link case by expanding it with Shortcuts' own "Expand URL"
-// action (full OS-level network access, no CORS) before ever handing a URL
-// to Plate Ledger — see PROGRESS.md's Phase 8 section for the setup steps.
+// this module actually extracts from. The in-form flow tells the person to
+// open a short link once themselves (in Safari) and paste the resulting
+// full URL instead — see the "short-link" reason below.
+//
+// A companion iOS Shortcut was built and then dropped (2026-08-29): it
+// could expand a short link on-device (Shortcuts' network access isn't
+// subject to this file's CORS limit), but had no way to hand the result
+// into the already-installed Home Screen app — Apple treats a standalone
+// Home Screen web app and Safari as separate storage containers for the
+// *same* origin (confirmed intended WebKit behavior, not a bug), so
+// anything a Shortcut opens lands in Safari's own separate database
+// instead. See [[build_environment_notes]] and PROGRESS.md's Phase 8
+// section for the full writeup — worth revisiting if this project ever
+// becomes a native app, which wouldn't have this particular limitation.
 //
 // Formats handled (confirmed against Google's and Apple's own URL docs,
 // 2026-08-29):
